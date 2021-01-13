@@ -6,6 +6,83 @@ export const scopetag = Symbol("scopetag");
 
 export var scope;
 
+let arraypools = new Map();
+let matpools = new Map();
+let _startdepth = 0;
+
+export const pools = [arraypools, matpools];
+
+
+//from:https://en.wikipedia.org/wiki/Mersenne_Twister
+function _int32(x) {
+  // Get the 31 least significant bits.
+  return ~~(((1<<30) - 1) & (~~x))
+}
+
+export class MersenneRandom {
+  constructor(seed) {
+    // Initialize the index to 0
+    this.index = 624;
+    this.mt = new Uint32Array(624);
+
+    this.seed(seed);
+  }
+
+  random() {
+    return this.extract_number()/(1<<30);
+  }
+
+  seed(seed) {
+    seed = ~~(seed*8192);
+
+    // Initialize the index to 0
+    this.index = 624;
+    this.mt.fill(0, 0, this.mt.length);
+
+    this.mt[0] = seed;  // Initialize the initial state to the seed
+
+    for (var i = 1; i < 624; i++) {
+      this.mt[i] = _int32(
+        1812433253*(this.mt[i - 1] ^ this.mt[i - 1]>>30) + i);
+    }
+  }
+
+  extract_number() {
+    if (this.index >= 624)
+      this.twist();
+
+    var y = this.mt[this.index];
+
+    // Right shift by 11 bits
+    y = y ^ y>>11;
+    // Shift y left by 7 and take the bitwise and of 2636928640
+    y = y ^ y<<7 & 2636928640;
+    // Shift y left by 15 and take the bitwise and of y and 4022730752
+    y = y ^ y<<15 & 4022730752;
+    // Right shift by 18 bits
+    y = y ^ y>>18;
+
+    this.index = this.index + 1;
+
+    return _int32(y);
+  }
+
+  twist() {
+    for (var i = 0; i < 624; i++) {
+      // Get the most significant bit and add it to the less significant
+      // bits of the next number
+      var y = _int32((this.mt[i] & 0x80000000) +
+        (this.mt[(i + 1)%624] & 0x7fffffff));
+      this.mt[i] = this.mt[(i + 397)%624] ^ y>>1;
+
+      if (y%2 != 0)
+        this.mt[i] = this.mt[i] ^ 0x9908b0df;
+    }
+
+    this.index = 0;
+  }
+}
+
 export class cachepool extends Array {
   constructor(cb, initialCount = 8) {
     super();
@@ -79,13 +156,25 @@ export class cachepool extends Array {
   }
 }
 
-let arraypools = new Map();
-let matpools = new Map();
-let _startdepth = 0;
+export class Matrix extends Array {
+  constructor() {
+    super();
+  }
 
-export const pools = [arraypools, matpools];
+  set 0(v) {
+    if (typeof v === "string") {
+      throw new Error("eek");
+    }
 
-export function allocmat(m, n) {
+    this._zero = v;
+  }
+
+  get 0() {
+    return this._zero;
+  }
+}
+
+export function allocmat(m, n=m) {
   let key = m*8192 + n;
   //key = key | (1 < 23);
 
@@ -93,10 +182,10 @@ export function allocmat(m, n) {
   let pool = matpools.get(key);
   if (!pool) {
     pool = new cachepool(() => {
-      let ret = new Array(m);
+      let ret = new Matrix(m);
 
       for (let i = 0; i < m; i++) {
-        ret.push(new Array(n));
+        ret[i] = new Array(n);
       }
 
       return ret;
@@ -105,11 +194,28 @@ export function allocmat(m, n) {
     matpools.set(key, pool);
   }
 
-  return pool.alloc();
+  let ret = pool.alloc();
+  ret.length = m;
+
+  for (let i=0; i<ret.length; i++) {
+    if (typeof ret[i] === "string") {
+      console.warn("Corrupted matrix; fixing.", i);
+      ret[i] = new Array(n);
+    }
+
+    ret[i].length = n;
+  }
+
+  return ret;
 }
 
 export function allocarray(n) {
   let key = n;
+
+  if (isNaN(n)) {
+    console.log(n);
+    throw new Error("invalid array length" + n);
+  }
 
   //key = "a:" + n;
   let pool = arraypools.get(key);
@@ -122,7 +228,10 @@ export function allocarray(n) {
     arraypools.set(key, pool);
   }
 
-  return pool.alloc();
+  let ret = pool.alloc();
+  ret.length = n;
+
+  return ret;
 }
 
 export function free(block) {
@@ -190,7 +299,7 @@ export class Scope {
     if (b === bl.first) {
       bl.first = b[nexttag];
     }
-    if (b === gl.last) {
+    if (b === bl.last) {
       bl.last = b[prevtag];
     }
 
@@ -199,7 +308,7 @@ export class Scope {
     }
 
     if (b[nexttag]) {
-      b[nexttag][prevtav] = b[prevtab];
+      b[nexttag][prevtag] = b[prevtag];
     }
 
     b[scopetag] = undefined;
@@ -214,6 +323,11 @@ export class Scope {
       next = b[nexttag];
 
       if (!b[freetag]) {
+        if (!b[pooltag]) {
+          console.warn("Missing pool tag", b.constructor);
+          continue;
+        }
+
         b[pooltag].free(b);
       }
     }
@@ -226,8 +340,8 @@ let scopealloc = new cachepool(() => new Scope(), 8);
 
 export function start() {
   if (_startdepth === 0) {
-    for (let pools of pools) {
-      for (let pool of pools.values()) {
+    for (let poolmap of pools) {
+      for (let pool of poolmap.values()) {
         pool.freeAll();
       }
     }
@@ -327,8 +441,19 @@ export function allocidentity(n) {
 }
 
 export function allocclone(A) {
-  let m = A.length, n = A[0].length;
+  let m = A.length;
 
+  if (typeof A[0] === "number") {
+    let ret = allocarray(A.length);
+
+    for (let i=0; i<ret.length; i++) {
+      ret[i] = A[i];
+    }
+
+    return ret;
+  }
+
+  let n = A[0].length;
   let mat = allocmat(m, n);
 
   for (let i = 0; i < m; i++) {

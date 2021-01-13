@@ -1,17 +1,41 @@
 "use strict";
 
-let base = (typeof exports === "undefined") ? (function numeric() {
-}) : (exports);
-if (typeof global !== "undefined") { global.numeric = base; }
-
 export const version = "1.2.6";
 
+export const generated = {};
+
 export * from './util.js';
-import {myIndexOf, allocarray, allocclone, allocidentity, allocmat} from './util.js';
+import {myIndexOf, start, end, allocarray, allocclone, allocidentity, allocmat} from './util.js';
 import {cachering, cachepool} from './util.js';
 
 export let precision = 4;
 export let largeArray = 50;
+
+export var dim = function dim(x) {
+  let y, z;
+
+  if (typeof x === "object") {
+    y = x[0];
+    if (typeof y === "object") {
+      z = y[0];
+      if (typeof z === "object") {
+        return _dim(x);
+      }
+      let ret = allocarray(2);
+      ret[0] = x.length;
+      ret[1] = y.length;
+      return ret;
+    }
+
+    let ret = allocarray(1);
+    ret[0] = x.length;
+    return ret;
+  }
+
+  let ret = allocarray(0);
+  ret.length = 0;
+  return ret;
+}
 
 export function prettyPrint(x) {
   function fmtnum(x) {
@@ -345,32 +369,6 @@ export function _dim(x) {
   return ret;
 }
 
-export function dim(x) {
-  let y, z;
-
-  if (typeof x === "object") {
-    y = x[0];
-    if (typeof y === "object") {
-      z = y[0];
-      if (typeof z === "object") {
-        return _dim(x);
-      }
-      let ret = allocarray(2);
-      ret[0] = x.length;
-      ret[1] = y.length;
-      return ret;
-    }
-
-    let ret = allocarray(1);
-    ret[0] = x.length;
-    return ret;
-  }
-
-  let ret = allocarray(0);
-  ret.length = 0;
-  return ret;
-}
-
 export function mapreduce(body, init) {
   return Function('x', 'accum', '_s', '_k',
     `if(typeof accum === "undefined") accum = ${init};
@@ -498,7 +496,7 @@ export function _getCol(A, j, x) {
 
 export function dotMMbig(x, y) {
   let gc = _getCol, p = y.length, v = allocarray(p);
-  let m = x.length, n = y[0].length, A = new allocarray(m), xj;
+  let m = x.length, n = y[0].length, A = allocarray(m), xj;
   let VV = dotVV;
   let i, j, k, z;
   --p;
@@ -520,8 +518,12 @@ export function dotMMbig(x, y) {
 
 export function dotMV(x, y) {
   let p = x.length, q = y.length, i;
-  let ret = Array(p), dotVV = dotVV;
-  for (i = p - 1; i >= 0; i--) { ret[i] = dotVV(x[i], y); }
+  let ret = allocarray(p);
+
+  for (i = p - 1; i >= 0; i--) {
+    ret[i] = dotVV(x[i], y);
+  }
+
   return ret;
 }
 
@@ -530,9 +532,11 @@ export function dotVM(x, y) {
 
   p = x.length;
   q = y[0].length;
-  ret = Array(q);
+  ret = allocarray(q);
+
   for (k = q - 1; k >= 0; k--) {
     woo = x[p - 1]*y[p - 1][k];
+
     for (j = p - 2; j >= 1; j -= 2) {
       i0 = j - 1;
       woo += x[j]*y[j][k] + x[i0]*y[i0][k];
@@ -540,6 +544,7 @@ export function dotVM(x, y) {
     if (j === 0) { woo += x[0]*y[0][k]; }
     ret[k] = woo;
   }
+
   return ret;
 }
 
@@ -566,15 +571,22 @@ export function dot(x, y) {
     case 1001:
       return dotVV(x, y);
     case 1000:
-      return mulVS(x, y);
+      return generated.mulVS(x, y);
     case 1:
-      return mulSV(x, y);
+      return generated.mulSV(x, y);
     case 0:
       return x*y;
     default:
       throw new Error('numeric.dot only works on vectors and matrices');
   }
 }
+
+generated.dot = dot;
+generated.dotMV = dotMV;
+generated.dotVV = dotVV;
+generated.dotVM = dotVM;
+generated.dotMMbig = dotMMbig;
+generated.dotMMsmall = dotMMsmall;
 
 export function diag(d) {
   let i, i1, j, n = d.length, A = Array(n), Ai;
@@ -597,6 +609,8 @@ export function diag(d) {
   return A;
 }
 
+generated.diag = diag;
+
 export function getDiag(A) {
   let n = Math.min(A.length, A[0].length), i, ret = Array(n);
   for (i = n - 1; i >= 1; --i) {
@@ -610,8 +624,12 @@ export function getDiag(A) {
   return ret;
 }
 
+let _itmp = [0];
+
 export function identity(n) {
-  return diag(rep([n], 1));
+  _itmp[0] = n;
+
+  return diag(rep(_itmp, 1));
 }
 
 export function pointwise(params, body, setup) {
@@ -650,7 +668,10 @@ export function pointwise(params, body, setup) {
 
 export function pointwise2(params, body, setup) {
   if (typeof setup === "undefined") { setup = ""; }
-  let fun = [];
+
+  var func;
+
+  let fun = 'func = function(';
   let k;
   let avec = /\[i\]$/, p, thevec = '';
   let haveret = false;
@@ -660,18 +681,28 @@ export function pointwise2(params, body, setup) {
       thevec = p;
     } else { p = params[k]; }
     if (p === 'ret') haveret = true;
-    fun.push(p);
+
+    if (k > 0) {
+      fun += ', ';
+    }
+    fun += p;
+    //fun.push(p);
   }
-  fun[params.length] = (
-    'let _n = ' + thevec + '.length;\n' +
-    'let i' + (haveret ? '' : ', ret = Array(_n)') + ';\n' +
-    setup + '\n' +
-    'for(i=_n-1;i!==-1;--i) {\n' +
-    body + '\n' +
-    '}\n' +
-    'return ret;'
-  );
-  return Function.apply(null, fun);
+  fun += ') {\n';
+
+  fun +=`
+    let _n = ${thevec}.length;
+    let i${haveret ? '' : ', ret = allocarray(_n)'};
+    ${setup}
+    for(i=_n-1;i!==-1;--i) {
+      ${body}
+    }
+    return ret;
+  }\n`;
+
+
+  eval(fun);
+  return func;
 }
 
 export const _biforeach = (function _biforeach(x, y, s, k, f) {
@@ -706,8 +737,6 @@ export const _foreach2 = (function _foreach2(x, s, k, f) {
   for (i = n - 1; i >= 0; i--) { ret[i] = _foreach2(x[i], s, k + 1, f); }
   return ret;
 });
-
-export const generated = {};
 
 /*numeric.anyV = numeric.mapreduce('if(xi) return true;','false');
 numeric.allV = numeric.mapreduce('if(!xi) return false;','true');
@@ -807,10 +836,9 @@ export const mapreducers = {
       generated[i + 'VV'] = pointwise2(['x[i]', 'y[i]'], code('ret[i]', 'x[i]', 'y[i]'), setup);
       generated[i + 'SV'] = pointwise2(['x', 'y[i]'], code('ret[i]', 'x', 'y[i]'), setup);
       generated[i + 'VS'] = pointwise2(['x[i]', 'y'], code('ret[i]', 'x[i]', 'y'), setup);
-      generated[i] = Function(
+      eval(`generated['${i}'] = function() {\n` +
         'let n = arguments.length, i, x = arguments[0], y;\n' +
         'let VV = generated.' + i + 'VV, VS = generated.' + i + 'VS, SV = generated.' + i + 'SV;\n' +
-        'let dim = generated.dim;\n' +
         'for(i=1;i!==n;++i) { \n' +
         '  y = arguments[i];\n' +
         '  if(typeof x === "object") {\n' +
@@ -818,8 +846,8 @@ export const mapreducers = {
         '      else x = _biforeach2(x,y,dim(x),0,VS);\n' +
         '  } else if(typeof y === "object") x = _biforeach2(x,y,dim(y),0,SV);\n' +
         '  else ' + codeeq('x', 'y') + '\n' +
-        '}\nreturn x;\n');
-      generated[o] = base[i];
+        '}\nreturn x;\n}\n');
+      generated[o] = generated[i];
       generated[i + 'eqV'] = pointwise2(['ret[i]', 'x[i]'], codeeq('ret[i]', 'x[i]'), setup);
       generated[i + 'eqS'] = pointwise2(['ret[i]', 'x'], codeeq('ret[i]', 'x'), setup);
       generated[i + 'eq'] = Function(
@@ -848,16 +876,16 @@ export const mapreducers = {
       if (myIndexOf.call(mathfuns, i) !== -1) {
         if (Math.hasOwnProperty(o)) setup = 'let ' + o + ' = Math.' + o + ';\n';
       }
-      base[i + 'eqV'] = pointwise2(['ret[i]'], 'ret[i] = ' + o + '(ret[i]);', setup);
-      base[i + 'eq'] = Function('x',
+      generated[i + 'eqV'] = pointwise2(['ret[i]'], 'ret[i] = ' + o + '(ret[i]);', setup);
+      generated[i + 'eq'] = Function('x',
         'if(typeof x !== "object") return ' + o + 'x\n' +
         'let i;\n' +
         'let V = generated.' + i + 'eqV;\n' +
         'let s = dim(x);\n' +
         '_foreach(x,s,0,V);\n' +
         'return x;\n');
-      base[i + 'V'] = pointwise2(['x[i]'], 'ret[i] = ' + o + '(x[i]);', setup);
-      base[i] = Function('x',
+      generated[i + 'V'] = pointwise2(['x[i]'], 'ret[i] = ' + o + '(x[i]);', setup);
+      generated[i] = Function('x',
         'if(typeof x !== "object") return ' + o + '(x)\n' +
         'let i;\n' +
         'let V = generated.' + i + 'V;\n' +
@@ -873,8 +901,9 @@ export const mapreducers = {
     if (mapreducers.hasOwnProperty(i)) {
       o = mapreducers[i];
       generated[i + 'V'] = mapreduce2(o[0], o[1]);
-      generated[i] = Function('x', 's', 'k',
-        o[1] +
+
+      let code = `generated['${i}'] = function(x, s, k) {\n`;
+        code += o[1] +
         'if(typeof x !== "object") {' +
         '    xi = x;\n' +
         o[0] + ';\n' +
@@ -889,7 +918,9 @@ export const mapreducers = {
         '   xi = arguments.callee(x[i]);\n' +
         o[0] + ';\n' +
         '}\n' +
-        'return accum;\n');
+        'return accum;\n}\n';
+
+      eval(code);
     }
   }
 }());
@@ -908,6 +939,7 @@ export function trunc(x, y) {
 }
 
 export const clone = generated.clone;
+export const norm2Squared = generated.norm2Squared;
 
 export function inv(x) {
   let s = dim(x), abs = Math.abs, m = s[0], n = s[1];
@@ -1096,12 +1128,20 @@ export function getBlock(x, from, to) {
   let s = dim(x);
 
   function foo(x, k) {
-    let i, a = from[k], n = to[k] - a, ret = Array(n);
+    let i, a = from[k], n = to[k] - a, ret = allocarray(n);
+
     if (k === s.length - 1) {
-      for (i = n; i >= 0; i--) { ret[i] = x[i + a]; }
+      for (i = n; i >= 0; i--) {
+        ret[i] = x[i + a];
+      }
+
       return ret;
     }
-    for (i = n; i >= 0; i--) { ret[i] = foo(x[i + a], k + 1); }
+
+    for (i = n; i >= 0; i--) {
+      ret[i] = foo(x[i + a], k + 1);
+    }
+
     return ret;
   }
 
@@ -1248,12 +1288,14 @@ export function Tbinop(rr, rc, cr, cc, setup) {
     setup = '';
     for (k in generated) {
       if (generated.hasOwnProperty(k) && (rr.indexOf(k) >= 0 || rc.indexOf(k) >= 0 || cr.indexOf(k) >= 0 || cc.indexOf(k) >= 0) && k.length > 1) {
-        setup += 'let ' + k + ' = generated' + k + ';\n';
+        setup += 'let ' + k + ' = generated.' + k + ';\n';
       }
     }
   }
 
-  return Function(['y'],
+  var func;
+
+  let code = 'func = function(y) {\n'+
     'let x = this;\n' +
     'if(!(y instanceof T)) { y = new T(y); }\n' +
     setup + '\n' +
@@ -1266,8 +1308,12 @@ export function Tbinop(rr, rc, cr, cc, setup) {
     'if(y.y) {\n' +
     '  return new T(' + rc + ');\n' +
     '}\n' +
-    'return new T(' + rr + ');\n'
-  );
+    'return new T(' + rr + ');\n' +
+    '}\n';
+
+  eval(code);
+
+  return func;
 }
 
 T.prototype.add = Tbinop(
@@ -1296,14 +1342,19 @@ T.prototype.dot = Tbinop(
 
 export function Tunop(r, c, s) {
   if (typeof s !== "string") { s = ''; }
-  return Function(
+  var func;
+
+  let code = 'func = function() {\n' +
     'let x = this;\n' +
     s + '\n' +
     'if(x.y) {' +
     '  ' + c + ';\n' +
     '}\n' +
-    r + ';\n'
-  );
+    r + ';\n}\n';
+
+  eval(code);
+
+  return func;
 }
 
 T.prototype.exp = Tunop(
@@ -1314,8 +1365,8 @@ T.prototype.conj = Tunop(
   'return new T(x.x);',
   'return new T(x.x,generated.neg(x.y));');
 T.prototype.neg = Tunop(
-  'return new T(neg(x.x));',
-  'return new T(neg(x.x),neg(x.y));',
+  'return new T(generated.neg(x.x));',
+  'return new T(generated.neg(x.x), generated.neg(x.y));',
   'let neg = generated.neg;');
 T.prototype.sin = Tunop(
   'return new T(generated.sin(x.x))',
@@ -1538,12 +1589,13 @@ T.prototype.setRow = function setRow(i, v) {
   return this;
 }
 
-T.prototype.getBlock = function getBlock(from, to) {
+T.prototype.getBlock = function(from, to) {
   let x = this.x, y = this.y, b = getBlock;
+
   if (y) { return new T(b(x, from, to), b(y, from, to)); }
   return new T(b(x, from, to));
 }
-T.prototype.setBlock = function setBlock(from, to, A) {
+T.prototype.setBlock = function(from, to, A) {
   if (!(A instanceof T)) A = new T(A);
   let x = this.x, y = this.y, b = setBlock, Ax = A.x, Ay = A.y;
   if (Ay) {
@@ -1575,14 +1627,16 @@ T.eig = function eig() {
   if (this.y) { throw new Error('eig: not implemented for complex matrices.'); }
   return eig(this.x);
 }
-T.identity = function identity(n) {
+T.identity = function(n) {
   return new T(identity(n));
 }
-T.prototype.getDiag = function getDiag() {
-  let n = base;
+T.prototype.getDiag = function() {
   let x = this.x, y = this.y;
-  if (y) { return new n.T(n.getDiag(x), n.getDiag(y)); }
-  return new n.T(n.getDiag(x));
+
+  if (y) {
+    return new T(getDiag(x), getDiag(y));
+  }
+  return new T(getDiag(x));
 }
 
 // 4. Eigenvalues of real matrices
@@ -1592,6 +1646,9 @@ export const div = generated.div;
 export function house(x) {
   let v = allocclone(x);
   let s = x[0] >= 0 ? 1 : -1;
+
+  console.log(norm2(x), s, prettyPrint(v))
+
   let alpha = s*norm2(x);
   v[0] += alpha;
   let foo = norm2(v);
@@ -1601,17 +1658,50 @@ export function house(x) {
   return generated.div(v, foo);
 }
 
+function getarray() {
+  let ret = allocarray(arguments.length);
+
+  for (let i=0; i<arguments.length; i++) {
+    ret[i] = arguments[i];
+  }
+
+  return ret;
+}
+
 export function toUpperHessenberg(me) {
+  start();
+
+  let array = getarray;
+
   let s = dim(me);
-  if (s.length !== 2 || s[0] !== s[1]) { throw new Error('numeric: toUpperHessenberg() only works on square matrices'); }
+  if (s.length !== 2 || s[0] !== s[1]) {
+    throw new Error('numeric: toUpperHessenberg() only works on square matrices');
+  }
+
   let m = s[0], i, j, k, x, v, A = allocclone(me), B, C, Ai, Ci, Q = allocidentity(m), Qi;
+
   for (j = 0; j < m - 2; j++) {
-    x = Array(m - j - 1);
+    x = allocarray(m - j - 1);
+
     for (i = j + 1; i < m; i++) { x[i - j - 1] = A[i][j]; }
     if (norm2(x) > 0) {
       v = house(x);
-      B = getBlock(A, [j + 1, j], [m - 1, m - 1]);
+      B = getBlock(A, array(j + 1, j), array(m - 1, m - 1));
+
+      if (0&&B.length !== v.length) {
+        console.warn("length mismatch in toUpperHessenberg");
+        let n = B[0].length;
+        let row = new Array(n);
+        for (let i1=0; i1<n; i1++) {
+          row[i1] = 0;
+        }
+
+        B.push(row);
+      }
+
+      //console.log(v.length, B.length);
       C = tensor(v, dot(v, B));
+
       for (i = j + 1; i < m; i++) {
         Ai = A[i];
         Ci = C[i - j - 1];
@@ -1619,8 +1709,22 @@ export function toUpperHessenberg(me) {
           Ai[k] -= 2*Ci[k - j];
         }
       }
-      B = getBlock(A, [0, j + 1], [m - 1, m - 1]);
+
+      B = getBlock(A, array(0, j + 1), array(m - 1, m - 1));
+
+      if (0&&B.length !== v.length) {
+        console.warn("length mismatch in toUpperHessenberg");
+        let n = B[0].length;
+        let row = new Array(n);
+        for (let i1=0; i1<n; i1++) {
+          row[i1] = 0;
+        }
+
+        B.push(row);
+      }
+
       C = tensor(dot(B, v), v);
+
       for (i = 0; i < m; i++) {
         Ai = A[i];
         Ci = C[i];
@@ -1628,10 +1732,24 @@ export function toUpperHessenberg(me) {
           Ai[k] -= 2*Ci[k - j - 1];
         }
       }
-      B = Array(m - j - 1);
+
+      B = allocarray(m - j - 1);
       for (i = j + 1; i < m; i++) {
         B[i - j - 1] = Q[i];
       }
+
+
+      if (0&&B.length !== v.length) {
+        console.warn("length mismatch in toUpperHessenberg");
+        let n = B[0].length;
+        let row = new Array(n);
+        for (let i1=0; i1<n; i1++) {
+          row[i1] = 0;
+        }
+
+        B.push(row);
+      }
+
       C = tensor(v, dot(v, B));
       for (i = j + 1; i < m; i++) {
         Qi = Q[i];
@@ -1642,24 +1760,35 @@ export function toUpperHessenberg(me) {
       }
     }
   }
+
+  end(A, Q);
+
   return {H: A, Q: Q};
 }
 
 export const epsilon = 2.220446049250313e-16;
 
-export function QRFrancis(H, maxiter) {
-  if (typeof maxiter === "undefined") { maxiter = 10000; }
+export function QRFrancis(H, maxiter=10000) {
+  start();
+
+  let array = getarray;
+
   H = allocclone(H);
   //let H0 = allocclone(H);
   let s = dim(H), m = s[0], x, v, a, b, c, d, det, tr, Hloc, Q = allocidentity(m), Qi, Hi, B, C, Ci, i, j, k,
       iter;
-  if (m < 3) { return {Q: Q, B: [[0, m - 1]]}; }
+
+  if (m < 3) {
+    end(Q);
+
+    return {Q: Q, B: [[0, m - 1]]};
+  }
 
   for (iter = 0; iter < maxiter; iter++) {
     for (j = 0; j < m - 1; j++) {
       if (Math.abs(H[j + 1][j]) < epsilon*(Math.abs(H[j][j]) + Math.abs(H[j + 1][j + 1]))) {
-        let QH1 = QRFrancis(getBlock(H, [0, 0], [j, j]), maxiter);
-        let QH2 = QRFrancis(getBlock(H, [j + 1, j + 1], [m - 1, m - 1]), maxiter);
+        let QH1 = QRFrancis(getBlock(H, array(0, 0), array(j, j)), maxiter);
+        let QH2 = QRFrancis(getBlock(H, array(j + 1, j + 1), array(m - 1, m - 1)), maxiter);
         B = Array(j + 1);
         for (i = 0; i <= j; i++) { B[i] = Q[i]; }
         C = dot(QH1.Q, B);
@@ -1668,7 +1797,11 @@ export function QRFrancis(H, maxiter) {
         for (i = j + 1; i < m; i++) { B[i - j - 1] = Q[i]; }
         C = dot(QH2.Q, B);
         for (i = j + 1; i < m; i++) { Q[i] = C[i - j - 1]; }
-        return {Q: Q, B: QH1.B.concat(generated.add(QH2.B, j + 1))};
+
+        B = QH1.B.concat(generated.add(QH2.B, j + 1));
+        end(Q, B);
+
+        return {Q, B};
       }
     }
     a = H[m - 2][m - 2];
@@ -1696,7 +1829,14 @@ export function QRFrancis(H, maxiter) {
     C = tensor(v, dot(v, B));
     for (i = 0; i < 3; i++) {
       Hi = H[i];
+
+      //XXX
+      if (i >= C.length) {
+        continue;
+      }
+
       Ci = C[i];
+
       for (k = 0; k < m; k++) {
         Hi[k] -= 2*Ci[k];
       }
@@ -1714,7 +1854,14 @@ export function QRFrancis(H, maxiter) {
     C = tensor(v, dot(v, B));
     for (i = 0; i < 3; i++) {
       Qi = Q[i];
+
+      //XXX
+      if (i >= C.length) {
+        continue;
+      }
+
       Ci = C[i];
+
       for (k = 0; k < m; k++) {
         Qi[k] -= 2*Ci[k];
       }
@@ -1723,25 +1870,47 @@ export function QRFrancis(H, maxiter) {
     for (j = 0; j < m - 2; j++) {
       for (k = j; k <= j + 1; k++) {
         if (Math.abs(H[k + 1][k]) < epsilon*(Math.abs(H[k][k]) + Math.abs(H[k + 1][k + 1]))) {
-          let QH1 = QRFrancis(getBlock(H, [0, 0], [k, k]), maxiter);
-          let QH2 = QRFrancis(getBlock(H, [k + 1, k + 1], [m - 1, m - 1]), maxiter);
-          B = Array(k + 1);
-          for (i = 0; i <= k; i++) { B[i] = Q[i]; }
+          let QH1 = QRFrancis(getBlock(H, array(0, 0), array(k, k)), maxiter);
+          let QH2 = QRFrancis(getBlock(H, array(k + 1, k + 1), array(m - 1, m - 1)), maxiter);
+
+          B = allocarray(k + 1);
+          for (i = 0; i <= k; i++) {
+            B[i] = Q[i];
+          }
+
           C = dot(QH1.Q, B);
-          for (i = 0; i <= k; i++) { Q[i] = C[i]; }
-          B = Array(m - k - 1);
-          for (i = k + 1; i < m; i++) { B[i - k - 1] = Q[i]; }
+          for (i = 0; i <= k; i++) {
+            Q[i] = C[i];
+          }
+
+          B = allocarray(m - k - 1);
+          for (i = k + 1; i < m; i++) {
+            B[i - k - 1] = Q[i];
+          }
+
           C = dot(QH2.Q, B);
-          for (i = k + 1; i < m; i++) { Q[i] = C[i - k - 1]; }
-          return {Q: Q, B: QH1.B.concat(generated.add(QH2.B, k + 1))};
+          for (i = k + 1; i < m; i++) {
+            Q[i] = C[i - k - 1];
+          }
+
+          B = QH1.B.concat(generated.add(QH2.B, k + 1));
+          end(Q, B);
+
+          return {Q, B};
         }
       }
+
       J = Math.min(m - 1, j + 3);
       x = Array(J - j);
-      for (i = j + 1; i <= J; i++) { x[i - j - 1] = H[i][j]; }
+
+      for (i = j + 1; i <= J; i++) {
+        x[i - j - 1] = H[i][j];
+      }
+
       v = house(x);
       B = getBlock(H, [j + 1, j], [J, m - 1]);
       C = tensor(v, dot(v, B));
+
       for (i = j + 1; i <= J; i++) {
         Hi = H[i];
         Ci = C[i - j - 1];
@@ -1749,8 +1918,10 @@ export function QRFrancis(H, maxiter) {
           Hi[k] -= 2*Ci[k - j];
         }
       }
+
       B = getBlock(H, [0, j + 1], [m - 1, J]);
       C = tensor(dot(B, v), v);
+
       for (i = 0; i < m; i++) {
         Hi = H[i];
         Ci = C[i];
@@ -1762,7 +1933,9 @@ export function QRFrancis(H, maxiter) {
       for (i = j + 1; i <= J; i++) {
         B[i - j - 1] = Q[i];
       }
+
       C = tensor(v, dot(v, B));
+
       for (i = j + 1; i <= J; i++) {
         Qi = Q[i];
         Ci = C[i - j - 1];
@@ -1772,17 +1945,23 @@ export function QRFrancis(H, maxiter) {
       }
     }
   }
+
+  end();
   throw new Error('numeric: eigenvalue iteration does not converge -- increase maxiter?');
 }
 
 export function eig(A, maxiter) {
+  start();
+
   let QH = toUpperHessenberg(A);
   let QB = QRFrancis(QH.H, maxiter);
+
   let n = A.length, i, k, flag = false, B = QB.B, H = dot(QB.Q, dot(QH.H, transpose(QB.Q)));
   let Q = new T(dot(QB.Q, QH.Q)), Q0;
   let m = B.length, j;
   let a, b, c, d, p1, p2, disc, x, y, p, q, n1, n2;
   let sqrt = Math.sqrt;
+
   for (k = 0; k < m; k++) {
     i = B[k][0];
     if (i === B[k][1]) {
@@ -1861,7 +2040,12 @@ export function eig(A, maxiter) {
   }
   E = E.transpose();
   E = Q.transjugate().dot(E);
-  return {lambda: R.getDiag(), E: E};
+
+  let ret = {lambda: R.getDiag(), E: E};
+
+  end(ret.lambda, E);
+
+  return ret;
 };
 
 // 5. Compressed Column Storage matrices
