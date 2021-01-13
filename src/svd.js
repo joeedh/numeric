@@ -1,32 +1,35 @@
+
 /*
 Shanti Rao sent me this routine by private email. I had to modify it
 slightly to work on Arrays instead of using a Matrix object.
 It is apparently translated from http://stitchpanorama.sourceforge.net/Python/svd.py
 */
 
-numeric.svd= function svd(A) {
-    var temp;
+import * as numeric from './base.js';
+
+export function svd(A) {
+    let temp;
 //Compute the thin SVD from G. H. Golub and C. Reinsch, Numer. Math. 14, 403-420 (1970)
-	var prec= numeric.epsilon; //Math.pow(2,-52) // assumes double prec
-	var tolerance= 1.e-64/prec;
-	var itmax= 50;
-	var c=0;
-	var i=0;
-	var j=0;
-	var k=0;
-	var l=0;
+	let prec= numeric.epsilon; //Math.pow(2,-52) // assumes double prec
+	let tolerance= 1.e-64/prec;
+	let itmax= 50;
+	let c=0;
+	let i=0;
+	let j=0;
+	let k=0;
+	let l=0;
 	
-	var u= numeric.clone(A);
-	var m= u.length;
+	let u= numeric.clone(A);
+	let m= u.length;
 	
-	var n= u[0].length;
+	let n= u[0].length;
 	
 	if (m < n) throw "Need more rows than columns"
 	
-	var e = new Array(n);
-	var q = new Array(n);
+	let e = new Array(n);
+	let q = new Array(n);
 	for (i=0; i<n; i++) e[i] = q[i] = 0.0;
-	var v = numeric.rep([n,n],0);
+	let v = numeric.rep([n,n],0);
 //	v.zero();
 	
  	function pythag(a,b)
@@ -35,20 +38,20 @@ numeric.svd= function svd(A) {
 		b = Math.abs(b)
 		if (a > b)
 			return a*Math.sqrt(1.0+(b*b/a/a))
-		else if (b == 0.0) 
+		else if (b === 0.0)
 			return a
 		return b*Math.sqrt(1.0+(a*a/b/b))
 	}
 
 	//Householder's reduction to bidiagonal form
 
-	var f= 0.0;
-	var g= 0.0;
-	var h= 0.0;
-	var x= 0.0;
-	var y= 0.0;
-	var z= 0.0;
-	var s= 0.0;
+	let f= 0.0;
+	let g= 0.0;
+	let h= 0.0;
+	let x= 0.0;
+	let y= 0.0;
+	let z= 0.0;
+	let s= 0.0;
 	
 	for (i=0; i < n; i++)
 	{	
@@ -132,13 +135,13 @@ numeric.svd= function svd(A) {
 	}
 	
 	// accumulation of left hand transformations
-	for (i=n-1; i != -1; i+= -1)
+	for (i=n-1; i !== -1; i+= -1)
 	{	
 		l= i+1
 		g= q[i]
 		for (j=l; j < n; j++) 
 			u[i][j] = 0;
-		if (g != 0.0)
+		if (g !== 0.0)
 		{
 			h= u[i][i]*g
 			for (j=l; j < n; j++)
@@ -159,9 +162,9 @@ numeric.svd= function svd(A) {
 	prec= prec*x
 	for (k=n-1; k != -1; k+= -1)
 	{
-		for (var iteration=0; iteration < itmax; iteration++)
+		for (let iteration=0; iteration < itmax; iteration++)
 		{	// test f splitting
-			var test_convergence = false
+			let test_convergence = false
 			for (l=k; l != -1; l+= -1)
 			{	
 				if (Math.abs(e[l]) <= prec)
@@ -175,7 +178,7 @@ numeric.svd= function svd(A) {
 			{	// cancellation of e[l] if l>0
 				c= 0.0
 				s= 1.0
-				var l1= l-1
+				let l1= l-1
 				for (i =l; i<k+1; i++)
 				{	
 					f= s*e[i]
