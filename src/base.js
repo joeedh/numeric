@@ -7,7 +7,8 @@ if (typeof global !== "undefined") { global.numeric = base; }
 export const version = "1.2.6";
 
 export * from './util.js';
-import {myIndexOf} from './util.js';
+import {myIndexOf, allocarray, allocclone, allocidentity, allocmat} from './util.js';
+import {cachering, cachepool} from './util.js';
 
 export var precision = 4;
 export var largeArray = 50;
@@ -327,16 +328,26 @@ export function imageURL(img) {
 
 // 2. Linear algebra with Arrays.
 export function _dim(x) {
-  var ret = [];
+  let x1 = x;
+  let size = 0;
+  while (typeof x1 === "object") {
+    x1 = x1[0];
+    size++;
+  }
+
+  var ret = allocarray(size);
+  let i = 0;
   while (typeof x === "object") {
-    ret.push(x.length);
+    ret[i++] = x.length;
     x = x[0];
   }
+
   return ret;
 }
 
 export function dim(x) {
   var y, z;
+
   if (typeof x === "object") {
     y = x[0];
     if (typeof y === "object") {
@@ -344,38 +355,48 @@ export function dim(x) {
       if (typeof z === "object") {
         return _dim(x);
       }
-      return [x.length, y.length];
+      let ret = allocarray(2);
+      ret[0] = x.length;
+      ret[1] = y.length;
+      return ret;
     }
-    return [x.length];
+
+    let ret = allocarray(1);
+    ret[0] = x.length;
+    return ret;
   }
-  return [];
+
+  let ret = allocarray(0);
+  ret.length = 0;
+  return ret;
 }
 
 export function mapreduce(body, init) {
   return Function('x', 'accum', '_s', '_k',
-    'if(typeof accum === "undefined") accum = ' + init + ';\n' +
-    'if(typeof x === "number") { var xi = x; ' + body + '; return accum; }\n' +
-    'if(typeof _s === "undefined") _s = dim(x);\n' +
-    'if(typeof _k === "undefined") _k = 0;\n' +
-    'var _n = _s[_k];\n' +
-    'var i,xi;\n' +
-    'if(_k < _s.length-1) {\n' +
-    '    for(i=_n-1;i>=0;i--) {\n' +
-    '        accum = arguments.callee(x[i],accum,_s,_k+1);\n' +
-    '    }' +
-    '    return accum;\n' +
-    '}\n' +
-    'for(i=_n-1;i>=1;i-=2) { \n' +
-    '    xi = x[i];\n' +
-    '    ' + body + ';\n' +
-    '    xi = x[i-1];\n' +
-    '    ' + body + ';\n' +
-    '}\n' +
-    'if(i === 0) {\n' +
-    '    xi = x[i];\n' +
-    '    ' + body + '\n' +
-    '}\n' +
-    'return accum;'
+   `if(typeof accum === "undefined") accum = ${init};
+    if(typeof x === "number") { var xi = x; ${body}; return accum; }
+    if(typeof _s === "undefined") _s = dim(x);
+    if(typeof _k === "undefined") _k = 0;
+    var _n = _s[_k];
+    var i,xi;
+    if(_k < _s.length-1) {
+        for(i=_n-1;i>=0;i--) {
+            accum = arguments.callee(x[i],accum,_s,_k+1);
+        }
+        return accum;
+    }
+    for(i=_n-1;i>=1;i-=2) {
+        xi = x[i];
+        ${body};
+        xi = x[i-1];
+        ${body};
+    }
+    if(i === 0) {
+        xi = x[i];
+        ${body};
+    }
+    return accum;
+    `
   );
 }
 
@@ -405,41 +426,63 @@ export function same(x, y) {
 }
 
 export function rep(s, v, k) {
-  if (typeof k === "undefined") { k = 0; }
-  var n = s[k], ret = Array(n), i;
+  if (typeof k === "undefined") {
+    k = 0;
+  }
+
+  let n = s[k], ret = allocarray(n), i;
+
   if (k === s.length - 1) {
     for (i = n - 2; i >= 0; i -= 2) {
       ret[i + 1] = v;
       ret[i] = v;
     }
-    if (i === -1) { ret[0] = v; }
+
+    if (i === -1) {
+      ret[0] = v;
+    }
+
     return ret;
   }
-  for (i = n - 1; i >= 0; i--) { ret[i] = rep(s, v, k + 1); }
+
+  for (i = n - 1; i >= 0; i--) {
+    ret[i] = rep(s, v, k + 1);
+  }
+
   return ret;
 }
 
 
 export function dotMMsmall(x, y) {
-  var i, j, k, p, q, r, ret, foo, bar, woo, i0, k0, p0, r0;
+  let i, j, k, p, q, r, ret, foo, bar, woo, i0, k0, p0, r0;
+
   p = x.length;
   q = y.length;
   r = y[0].length;
-  ret = Array(p);
+  ret = allocarray(p);
+
   for (i = p - 1; i >= 0; i--) {
-    foo = Array(r);
+    foo = allocarray(r);
     bar = x[i];
+
     for (k = r - 1; k >= 0; k--) {
       woo = bar[q - 1]*y[q - 1][k];
+
       for (j = q - 2; j >= 1; j -= 2) {
         i0 = j - 1;
         woo += bar[j]*y[j][k] + bar[i0]*y[i0][k];
       }
-      if (j === 0) { woo += bar[0]*y[0][k]; }
+
+      if (j === 0) {
+        woo += bar[0]*y[0][k];
+      }
+
       foo[k] = woo;
     }
+
     ret[i] = foo;
   }
+
   return ret;
 }
 
@@ -454,14 +497,14 @@ export function _getCol(A, j, x) {
 }
 
 export function dotMMbig(x, y) {
-  var gc = _getCol, p = y.length, v = Array(p);
-  var m = x.length, n = y[0].length, A = new Array(m), xj;
+  let gc = _getCol, p = y.length, v = allocarray(p);
+  let m = x.length, n = y[0].length, A = new allocarray(m), xj;
   var VV = dotVV;
   var i, j, k, z;
   --p;
   --m;
   for (i = m; i !== -1; --i) {
-    A[i] = Array(n);
+    A[i] = allocarray(n);
   }
   --n;
   for (i = n; i !== -1; --i) {
@@ -867,8 +910,8 @@ export const clone = generated.clone;
 
 export function inv(x) {
   var s = dim(x), abs = Math.abs, m = s[0], n = s[1];
-  var A = clone(x), Ai, Aj;
-  var I = identity(m), Ii, Ij;
+  var A = allocclone(x), Ai, Aj;
+  var I = allocidentity(m), Ii, Ij;
 
   var i, j, k, x;
   for (j = 0; j < n; ++j) {
@@ -917,7 +960,7 @@ export function inv(x) {
 export function det(x) {
   var s = dim(x);
   if (s.length !== 2 || s[0] !== s[1]) { throw new Error('numeric: det() only works on square matrices'); }
-  var n = s[0], ret = 1, i, j, k, A = clone(x), Aj, Ai, alpha, temp, k1, k2, k3;
+  var n = s[0], ret = 1, i, j, k, A = allocclone(x), Aj, Ai, alpha, temp, k1, k2, k3;
   for (j = 0; j < n - 1; j++) {
     k = j;
     for (i = j + 1; i < n; i++) { if (Math.abs(A[i][j]) > Math.abs(A[k][j])) { k = i; } }
@@ -1295,8 +1338,8 @@ T.prototype.inv = function inv() {
   var A = this;
   if (typeof A.y === "undefined") { return new T(inv(A.x)); }
   var n = A.x.length, i, j, k;
-  var Rx = identity(n), Ry = rep([n, n], 0);
-  var Ax = clone(A.x), Ay = clone(A.y);
+  var Rx = allocidentity(n), Ry = rep([n, n], 0);
+  var Ax = allocclone(A.x), Ay = allocclone(A.y);
   var Aix, Aiy, Ajx, Ajy, Rix, Riy, Rjx, Rjy;
   var i, j, k, d, d1, ax, ay, bx, by, temp;
   for (i = 0; i < n; i++) {
@@ -1545,7 +1588,7 @@ T.prototype.getDiag = function getDiag() {
 export const div = generated.div;
 
 export function house(x) {
-  var v = clone(x);
+  var v = allocclone(x);
   var s = x[0] >= 0 ? 1 : -1;
   var alpha = s*norm2(x);
   v[0] += alpha;
@@ -1559,7 +1602,7 @@ export function house(x) {
 export function toUpperHessenberg(me) {
   var s = dim(me);
   if (s.length !== 2 || s[0] !== s[1]) { throw new Error('numeric: toUpperHessenberg() only works on square matrices'); }
-  var m = s[0], i, j, k, x, v, A = clone(me), B, C, Ai, Ci, Q = identity(m), Qi;
+  var m = s[0], i, j, k, x, v, A = allocclone(me), B, C, Ai, Ci, Q = allocidentity(m), Qi;
   for (j = 0; j < m - 2; j++) {
     x = Array(m - j - 1);
     for (i = j + 1; i < m; i++) { x[i - j - 1] = A[i][j]; }
@@ -1604,9 +1647,9 @@ export const epsilon = 2.220446049250313e-16;
 
 export function QRFrancis(H, maxiter) {
   if (typeof maxiter === "undefined") { maxiter = 10000; }
-  H = clone(H);
-  //var H0 = clone(H);
-  var s = dim(H), m = s[0], x, v, a, b, c, d, det, tr, Hloc, Q = identity(m), Qi, Hi, B, C, Ci, i, j, k,
+  H = allocclone(H);
+  //var H0 = allocclone(H);
+  var s = dim(H), m = s[0], x, v, a, b, c, d, det, tr, Hloc, Q = allocidentity(m), Qi, Hi, B, C, Ci, i, j, k,
       iter;
   if (m < 3) { return {Q: Q, B: [[0, m - 1]]}; }
 
@@ -2434,7 +2477,7 @@ export function sclone(A, k, n) {
     return ret;
   }
   for (i in A) {
-    if (A.hasOwnProperty(i)) ret[i] = clone(A[i], k + 1, n);
+    if (A.hasOwnProperty(i)) ret[i] = allocclone(A[i], k + 1, n);
   }
   return ret;
 }
@@ -2658,7 +2701,7 @@ export function cLU(A) {
 };
 
 export function cLUsolve(lu, b) {
-  var L = lu.L, U = lu.U, ret = clone(b);
+  var L = lu.L, U = lu.U, ret = allocclone(b);
   var Li = L[0], Lj = L[1], Lv = L[2];
   var Ui = U[0], Uj = U[1], Uv = U[2];
   var p = Ui.length, q = Li.length;
@@ -3083,7 +3126,7 @@ T.prototype.fft = function fft() {
   }
   var X = new T(a, b), Y = new T(cx, cy);
   X = X.mul(Y);
-  convpow2(X.x, X.y, clone(Y.x), generated.neg(Y.y));
+  convpow2(X.x, X.y, allocclone(Y.x), generated.neg(Y.y));
   X = X.mul(Y);
   X.x.length = n;
   X.y.length = n;
@@ -3112,7 +3155,7 @@ T.prototype.ifft = function ifft() {
   }
   var X = new T(a, b), Y = new T(cx, cy);
   X = X.mul(Y);
-  convpow2(X.x, X.y, clone(Y.x), generated.neg(Y.y));
+  convpow2(X.x, X.y, allocclone(Y.x), generated.neg(Y.y));
   X = X.mul(Y);
   X.x.length = n;
   X.y.length = n;
@@ -3125,7 +3168,7 @@ export function gradient(f, x) {
   var f0 = f(x);
   if (isNaN(f0)) throw new Error('gradient: f(x) is a NaN!');
   var max = Math.max;
-  var i, x0 = clone(x), f1, f2, J = Array(n);
+  var i, x0 = allocclone(x), f1, f2, J = Array(n);
   var div = generated.div, sub = generated.sub, errest, roundoff, max = Math.max, eps = 1e-3, abs = Math.abs,
       min                                                                                         = Math.min;
   var t0, t1, t2, it = 0, d1, d2, N;
@@ -3167,13 +3210,13 @@ export function uncmin(f, x0, tol, gradient, maxit, callback, options) {
     };
   }
   if (typeof maxit === "undefined") maxit = 1000;
-  x0 = clone(x0);
+  x0 = allocclone(x0);
   var n = x0.length;
   var f0 = f(x0), f1, df0;
   if (isNaN(f0)) throw new Error('uncmin: f(x0) is a NaN!');
   var max = Math.max, norm2 = norm2;
   tol = max(tol, epsilon);
-  var step, g0, g1, H1 = options.Hinv || identity(n);
+  var step, g0, g1, H1 = options.Hinv || allocidentity(n);
   var dot = dot, inv = inv, sub = generated.sub, add = generated.add, ten = tensor,
       div                                                                 = generated.div, mul                                            = generated.mul;
   var all = generated.all, isfinite = generated.isFinite, neg = generated.neg;
@@ -3439,7 +3482,7 @@ export function LU(A, fast) {
   var max;
   var n = A.length, n1 = n - 1;
   var P = new Array(n);
-  if (!fast) A = clone(A);
+  if (!fast) A = allocclone(A);
 
   for (k = 0; k < n; ++k) {
     Pk = k;
@@ -3487,7 +3530,7 @@ export function LUsolve(LUP, b) {
   var i, j;
   var LU = LUP.LU;
   var n = LU.length;
-  var x = clone(b);
+  var x = allocclone(b);
   var P = LUP.P;
   var Pi, LUi, LUii, tmp;
 
@@ -3527,12 +3570,12 @@ export function solve(A, b, fast) {
 // 12. Linear programming
 export function echelonize(A) {
   var s = dim(A), m = s[0], n = s[1];
-  var I = identity(m);
+  var I = allocidentity(m);
   var P = Array(m);
   var i, j, k, l, Ai, Ii, Z, a;
   var abs = Math.abs;
   var diveq = generated.diveq;
-  A = clone(A);
+  A = allocclone(A);
   for (i = 0; i < m; ++i) {
     k = 0;
     Ai = A[i];
@@ -3633,7 +3676,7 @@ export function _solveLP(c, A, b, tol, maxit) {
   var b0 = b;
   var y = rep([m], 0).concat(Math.max(0, generated.sup(generated.neg(b))) + 1);
   var x0 = __solveLP(c0, A0, b0, tol, maxit, y, false);
-  var x = clone(x0.solution);
+  var x = allocclone(x0.solution);
   x.length = m;
   var foo = generated.inf(sub(b, dot(A, x)));
   if (foo < 0) { return {solution: NaN, message: "Infeasible", iterations: x0.iterations}; }

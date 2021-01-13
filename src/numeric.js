@@ -1,4 +1,4 @@
-import * as numeric from './numeric.js';
+import * as numeric from './base.js';
 import * as svd from './svd.js';
 
 let exports = {};
