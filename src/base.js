@@ -1,6 +1,6 @@
 "use strict";
 
-var base = (typeof exports === "undefined") ? (function numeric() {
+let base = (typeof exports === "undefined") ? (function numeric() {
 }) : (exports);
 if (typeof global !== "undefined") { global.numeric = base; }
 
@@ -10,8 +10,8 @@ export * from './util.js';
 import {myIndexOf, allocarray, allocclone, allocidentity, allocmat} from './util.js';
 import {cachering, cachepool} from './util.js';
 
-export var precision = 4;
-export var largeArray = 50;
+export let precision = 4;
+export let largeArray = 50;
 
 export function prettyPrint(x) {
   function fmtnum(x) {
@@ -19,9 +19,9 @@ export function prettyPrint(x) {
     if (isNaN(x)) { return 'NaN'; }
     if (x < 0) { return '-' + fmtnum(-x); }
     if (isFinite(x)) {
-      var scale = Math.floor(Math.log(x)/Math.log(10));
-      var normalized = x/Math.pow(10, scale);
-      var basic = normalized.toPrecision(precision);
+      let scale = Math.floor(Math.log(x)/Math.log(10));
+      let normalized = x/Math.pow(10, scale);
+      let basic = normalized.toPrecision(precision);
       if (parseFloat(basic) === 10) {
         scale++;
         normalized = 1;
@@ -32,10 +32,10 @@ export function prettyPrint(x) {
     return 'Infinity';
   }
 
-  var ret = [];
+  let ret = [];
 
   function foo(x) {
-    var k;
+    let k;
     if (typeof x === "undefined") {
       ret.push(Array(precision + 8).join(' '));
       return false;
@@ -49,10 +49,10 @@ export function prettyPrint(x) {
       return false;
     }
     if (typeof x === "number") {
-      var a = fmtnum(x);
-      var b = x.toPrecision(precision);
-      var c = parseFloat(x.toString()).toString();
-      var d = [a, b, c, parseFloat(b).toString(), parseFloat(c).toString()];
+      let a = fmtnum(x);
+      let b = x.toPrecision(precision);
+      let c = parseFloat(x.toString()).toString();
+      let d = [a, b, c, parseFloat(b).toString(), parseFloat(c).toString()];
       for (k = 1; k < d.length; k++) { if (d[k].length < a.length) a = d[k]; }
       ret.push(Array(precision + 8 - a.length).join(' ') + a);
       return false;
@@ -63,7 +63,7 @@ export function prettyPrint(x) {
     }
     if (typeof x === "function") {
       ret.push(x.toString());
-      var flag = false;
+      let flag = false;
       for (k in x) {
         if (x.hasOwnProperty(k)) {
           if (flag) ret.push(',\n');
@@ -82,7 +82,7 @@ export function prettyPrint(x) {
         ret.push('...Large Array...');
         return true;
       }
-      var flag = false;
+      let flag = false;
       ret.push('[');
       for (k = 0; k < x.length; k++) {
         if (k > 0) {
@@ -95,7 +95,7 @@ export function prettyPrint(x) {
       return true;
     }
     ret.push('{');
-    var flag = false;
+    let flag = false;
     for (k in x) {
       if (x.hasOwnProperty(k)) {
         if (flag) ret.push(',\n');
@@ -117,7 +117,7 @@ export function parseDate(d) {
   function foo(d) {
     if (typeof d === 'string') { return Date.parse(d.replace(/-/g, '/')); }
     if (!(d instanceof Array)) { throw new Error("parseDate: parameter must be arrays of strings"); }
-    var ret = [], k;
+    let ret = [], k;
     for (k = 0; k < d.length; k++) { ret[k] = foo(d[k]); }
     return ret;
   }
@@ -129,7 +129,7 @@ export function parseFloat_(d) {
   function foo(d) {
     if (typeof d === 'string') { return parseFloat(d); }
     if (!(d instanceof Array)) { throw new Error("parseFloat: parameter must be arrays of strings"); }
-    var ret = [], k;
+    let ret = [], k;
     for (k = 0; k < d.length; k++) { ret[k] = foo(d[k]); }
     return ret;
   }
@@ -138,17 +138,17 @@ export function parseFloat_(d) {
 }
 
 export function parseCSV(t) {
-  var foo = t.split('\n');
-  var j, k;
-  var ret = [];
-  var pat = /(([^'",]*)|('[^']*')|("[^"]*")),/g;
-  var patnum = /^\s*(([+-]?[0-9]+(\.[0-9]*)?(e[+-]?[0-9]+)?)|([+-]?[0-9]*(\.[0-9]+)?(e[+-]?[0-9]+)?))\s*$/;
-  var stripper = function (n) {
+  let foo = t.split('\n');
+  let j, k;
+  let ret = [];
+  let pat = /(([^'",]*)|('[^']*')|("[^"]*")),/g;
+  let patnum = /^\s*(([+-]?[0-9]+(\.[0-9]*)?(e[+-]?[0-9]+)?)|([+-]?[0-9]*(\.[0-9]+)?(e[+-]?[0-9]+)?))\s*$/;
+  let stripper = function (n) {
     return n.substr(0, n.length - 1);
   }
-  var count = 0;
+  let count = 0;
   for (k = 0; k < foo.length; k++) {
-    var bar = (foo[k] + ",").match(pat), baz;
+    let bar = (foo[k] + ",").match(pat), baz;
     if (bar.length > 0) {
       ret[count] = [];
       for (j = 0; j < bar.length; j++) {
@@ -162,8 +162,8 @@ export function parseCSV(t) {
 }
 
 export function toCSV(A) {
-  var s = dim(A);
-  var i, j, m, n, row, ret;
+  let s = dim(A);
+  let i, j, m, n, row, ret;
   m = s[0];
   n = s[1];
   ret = [];
@@ -176,7 +176,7 @@ export function toCSV(A) {
 }
 
 export function getURL(url) {
-  var client = new XMLHttpRequest();
+  let client = new XMLHttpRequest();
   client.open("GET", url, false);
   client.send();
   return client;
@@ -184,9 +184,9 @@ export function getURL(url) {
 
 export function imageURL(img) {
   function base64(A) {
-    var n = A.length, i, x, y, z, p, q, r, s;
-    var key = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-    var ret = "";
+    let n = A.length, i, x, y, z, p, q, r, s;
+    let key = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    let ret = "";
     for (i = 0; i < n; i += 3) {
       x = A[i];
       y = A[i + 1];
@@ -204,7 +204,7 @@ export function imageURL(img) {
   function crc32Array(a, from, to) {
     if (typeof from === "undefined") { from = 0; }
     if (typeof to === "undefined") { to = a.length; }
-    var table = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
+    let table = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
                  0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988, 0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91,
                  0x1DB71064, 0x6AB020F2, 0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,
                  0x136C9856, 0x646BA8C0, 0xFD62F97A, 0x8A65C9EC, 0x14015C4F, 0x63066CD9, 0xFA0F3D63, 0x8D080DF5,
@@ -237,7 +237,7 @@ export function imageURL(img) {
                  0xBDBDF21C, 0xCABAC28A, 0x53B39330, 0x24B4A3A6, 0xBAD03605, 0xCDD70693, 0x54DE5729, 0x23D967BF,
                  0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, 0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D];
 
-    var crc = -1, y = 0, n = a.length, i;
+    let crc = -1, y = 0, n = a.length, i;
 
     for (i = from; i < to; i++) {
       y = (crc ^ a[i]) & 0xFF;
@@ -247,8 +247,8 @@ export function imageURL(img) {
     return crc ^ (-1);
   }
 
-  var h = img[0].length, w = img[0][0].length, s1, s2, next, k, length, a, b, i, j, adler32, crc32;
-  var stream = [
+  let h = img[0].length, w = img[0][0].length, s1, s2, next, k, length, a, b, i, j, adler32, crc32;
+  let stream = [
     137, 80, 78, 71, 13, 10, 26, 10,                           //  0: PNG signature
     0, 0, 0, 13,                                                  //  8: IHDR Chunk length
     73, 72, 68, 82,                                            // 12: "IHDR"
@@ -335,7 +335,7 @@ export function _dim(x) {
     size++;
   }
 
-  var ret = allocarray(size);
+  let ret = allocarray(size);
   let i = 0;
   while (typeof x === "object") {
     ret[i++] = x.length;
@@ -346,7 +346,7 @@ export function _dim(x) {
 }
 
 export function dim(x) {
-  var y, z;
+  let y, z;
 
   if (typeof x === "object") {
     y = x[0];
@@ -373,12 +373,12 @@ export function dim(x) {
 
 export function mapreduce(body, init) {
   return Function('x', 'accum', '_s', '_k',
-   `if(typeof accum === "undefined") accum = ${init};
-    if(typeof x === "number") { var xi = x; ${body}; return accum; }
+    `if(typeof accum === "undefined") accum = ${init};
+    if(typeof x === "number") { let xi = x; ${body}; return accum; }
     if(typeof _s === "undefined") _s = dim(x);
     if(typeof _k === "undefined") _k = 0;
-    var _n = _s[_k];
-    var i,xi;
+    let _n = _s[_k];
+    let i,xi;
     if(_k < _s.length-1) {
         for(i=_n-1;i>=0;i--) {
             accum = arguments.callee(x[i],accum,_s,_k+1);
@@ -402,8 +402,8 @@ export function mapreduce(body, init) {
 
 export function mapreduce2(body, setup) {
   return Function('x',
-    'var n = x.length;\n' +
-    'var i,xi;\n' + setup + ';\n' +
+    'let n = x.length;\n' +
+    'let i,xi;\n' + setup + ';\n' +
     'for(i=n-1;i!==-1;--i) { \n' +
     '    xi = x[i];\n' +
     '    ' + body + ';\n' +
@@ -414,7 +414,7 @@ export function mapreduce2(body, setup) {
 
 
 export function same(x, y) {
-  var i, n;
+  let i, n;
   if (!(x instanceof Array) || !(y instanceof Array)) { return false; }
   n = x.length;
   if (n !== y.length) { return false; }
@@ -487,7 +487,7 @@ export function dotMMsmall(x, y) {
 }
 
 export function _getCol(A, j, x) {
-  var n = A.length, i;
+  let n = A.length, i;
   for (i = n - 1; i > 0; --i) {
     x[i] = A[i][j];
     --i;
@@ -499,8 +499,8 @@ export function _getCol(A, j, x) {
 export function dotMMbig(x, y) {
   let gc = _getCol, p = y.length, v = allocarray(p);
   let m = x.length, n = y[0].length, A = new allocarray(m), xj;
-  var VV = dotVV;
-  var i, j, k, z;
+  let VV = dotVV;
+  let i, j, k, z;
   --p;
   --m;
   for (i = m; i !== -1; --i) {
@@ -519,14 +519,15 @@ export function dotMMbig(x, y) {
 }
 
 export function dotMV(x, y) {
-  var p = x.length, q = y.length, i;
-  var ret = Array(p), dotVV = dotVV;
+  let p = x.length, q = y.length, i;
+  let ret = Array(p), dotVV = dotVV;
   for (i = p - 1; i >= 0; i--) { ret[i] = dotVV(x[i], y); }
   return ret;
 }
 
 export function dotVM(x, y) {
-  var i, j, k, p, q, r, ret, foo, bar, woo, i0, k0, p0, r0, s1, s2, s3, baz, accum;
+  let i, j, k, p, q, r, ret, foo, bar, woo, i0, k0, p0, r0, s1, s2, s3, baz, accum;
+
   p = x.length;
   q = y[0].length;
   ret = Array(q);
@@ -543,7 +544,7 @@ export function dotVM(x, y) {
 }
 
 export function dotVV(x, y) {
-  var i, n = x.length, i1, ret = x[n - 1]*y[n - 1];
+  let i, n = x.length, i1, ret = x[n - 1]*y[n - 1];
   for (i = n - 2; i >= 1; i -= 2) {
     i1 = i - 1;
     ret += x[i]*y[i] + x[i1]*y[i1];
@@ -553,7 +554,7 @@ export function dotVV(x, y) {
 }
 
 export function dot(x, y) {
-  var d = dim;
+  let d = dim;
   switch (d(x).length*1000 + d(y).length) {
     case 2002:
       if (y.length < 10) return dotMMsmall(x, y);
@@ -576,7 +577,7 @@ export function dot(x, y) {
 }
 
 export function diag(d) {
-  var i, i1, j, n = d.length, A = Array(n), Ai;
+  let i, i1, j, n = d.length, A = Array(n), Ai;
   for (i = n - 1; i >= 0; i--) {
     Ai = Array(n);
     i1 = i + 2;
@@ -597,7 +598,7 @@ export function diag(d) {
 }
 
 export function getDiag(A) {
-  var n = Math.min(A.length, A[0].length), i, ret = Array(n);
+  let n = Math.min(A.length, A[0].length), i, ret = Array(n);
   for (i = n - 1; i >= 1; --i) {
     ret[i] = A[i][i];
     --i;
@@ -615,10 +616,10 @@ export function identity(n) {
 
 export function pointwise(params, body, setup) {
   if (typeof setup === "undefined") { setup = ""; }
-  var fun = [];
-  var k;
-  var avec = /\[i\]$/, p, thevec = '';
-  var haveret = false;
+  let fun = [];
+  let k;
+  let avec = /\[i\]$/, p, thevec = '';
+  let haveret = false;
   for (k = 0; k < params.length; k++) {
     if (avec.test(params[k])) {
       p = params[k].substring(0, params[k].length - 3);
@@ -632,8 +633,8 @@ export function pointwise(params, body, setup) {
   fun[params.length + 2] = (
     'if(typeof _s === "undefined") _s = dim(' + thevec + ');\n' +
     'if(typeof _k === "undefined") _k = 0;\n' +
-    'var _n = _s[_k];\n' +
-    'var i' + (haveret ? '' : ', ret = Array(_n)') + ';\n' +
+    'let _n = _s[_k];\n' +
+    'let i' + (haveret ? '' : ', ret = Array(_n)') + ';\n' +
     'if(_k < _s.length-1) {\n' +
     '    for(i=_n-1;i>=0;i--) ret[i] = arguments.callee(' + params.join(',') + ',_s,_k+1);\n' +
     '    return ret;\n' +
@@ -649,10 +650,10 @@ export function pointwise(params, body, setup) {
 
 export function pointwise2(params, body, setup) {
   if (typeof setup === "undefined") { setup = ""; }
-  var fun = [];
-  var k;
-  var avec = /\[i\]$/, p, thevec = '';
-  var haveret = false;
+  let fun = [];
+  let k;
+  let avec = /\[i\]$/, p, thevec = '';
+  let haveret = false;
   for (k = 0; k < params.length; k++) {
     if (avec.test(params[k])) {
       p = params[k].substring(0, params[k].length - 3);
@@ -662,8 +663,8 @@ export function pointwise2(params, body, setup) {
     fun.push(p);
   }
   fun[params.length] = (
-    'var _n = ' + thevec + '.length;\n' +
-    'var i' + (haveret ? '' : ', ret = Array(_n)') + ';\n' +
+    'let _n = ' + thevec + '.length;\n' +
+    'let i' + (haveret ? '' : ', ret = Array(_n)') + ';\n' +
     setup + '\n' +
     'for(i=_n-1;i!==-1;--i) {\n' +
     body + '\n' +
@@ -678,14 +679,14 @@ export const _biforeach = (function _biforeach(x, y, s, k, f) {
     f(x, y);
     return;
   }
-  var i, n = s[k];
+  let i, n = s[k];
   for (i = n - 1; i >= 0; i--) {
     _biforeach(typeof x === "object" ? x[i] : x, typeof y === "object" ? y[i] : y, s, k + 1, f);
   }
 });
 export const _biforeach2 = (function _biforeach2(x, y, s, k, f) {
   if (k === s.length - 1) { return f(x, y); }
-  var i, n = s[k], ret = Array(n);
+  let i, n = s[k], ret = Array(n);
   for (i = n - 1; i >= 0; --i) {
     ret[i] = _biforeach2(typeof x === "object" ? x[i] : x, typeof y === "object" ? y[i] : y, s, k + 1, f);
   }
@@ -696,12 +697,12 @@ export const _foreach = (function _foreach(x, s, k, f) {
     f(x);
     return;
   }
-  var i, n = s[k];
+  let i, n = s[k];
   for (i = n - 1; i >= 0; i--) { _foreach(x[i], s, k + 1, f); }
 });
 export const _foreach2 = (function _foreach2(x, s, k, f) {
   if (k === s.length - 1) { return f(x); }
-  var i, n = s[k], ret = Array(n);
+  let i, n = s[k], ret = Array(n);
   for (i = n - 1; i >= 0; i--) { ret[i] = _foreach2(x[i], s, k + 1, f); }
   return ret;
 });
@@ -760,19 +761,19 @@ export const ops1 = {
 };
 
 export const mapreducers = {
-  any         : ['if(xi) return true;', 'var accum = false;'],
-  all         : ['if(!xi) return false;', 'var accum = true;'],
-  sum         : ['accum += xi;', 'var accum = 0;'],
-  prod        : ['accum *= xi;', 'var accum = 1;'],
-  norm2Squared: ['accum += xi*xi;', 'var accum = 0;'],
-  norminf     : ['accum = max(accum,abs(xi));', 'var accum = 0, max = Math.max, abs = Math.abs;'],
-  norm1       : ['accum += abs(xi)', 'var accum = 0, abs = Math.abs;'],
-  sup         : ['accum = max(accum,xi);', 'var accum = -Infinity, max = Math.max;'],
-  inf         : ['accum = min(accum,xi);', 'var accum = Infinity, min = Math.min;']
+  any         : ['if(xi) return true;', 'let accum = false;'],
+  all         : ['if(!xi) return false;', 'let accum = true;'],
+  sum         : ['accum += xi;', 'let accum = 0;'],
+  prod        : ['accum *= xi;', 'let accum = 1;'],
+  norm2Squared: ['accum += xi*xi;', 'let accum = 0;'],
+  norminf     : ['accum = max(accum,abs(xi));', 'let accum = 0, max = Math.max, abs = Math.abs;'],
+  norm1       : ['accum += abs(xi)', 'let accum = 0, abs = Math.abs;'],
+  sup         : ['accum = max(accum,xi);', 'let accum = -Infinity, max = Math.max;'],
+  inf         : ['accum = min(accum,xi);', 'let accum = Infinity, min = Math.min;']
 };
 
 (function () {
-  var i, o;
+  let i, o;
   for (i = 0; i < mathfuns2.length; ++i) {
     o = mathfuns2[i];
     ops2[o] = o;
@@ -780,9 +781,9 @@ export const mapreducers = {
   for (i in ops2) {
     if (ops2.hasOwnProperty(i)) {
       o = ops2[i];
-      var code, codeeq, setup = '';
+      let code, codeeq, setup = '';
       if (myIndexOf.call(mathfuns2, i) !== -1) {
-        setup = 'var ' + o + ' = Math.' + o + ';\n';
+        setup = 'let ' + o + ' = Math.' + o + ';\n';
         code = function (r, x, y) {
           return r + ' = ' + o + '(' + x + ',' + y + ')';
         };
@@ -807,9 +808,9 @@ export const mapreducers = {
       generated[i + 'SV'] = pointwise2(['x', 'y[i]'], code('ret[i]', 'x', 'y[i]'), setup);
       generated[i + 'VS'] = pointwise2(['x[i]', 'y'], code('ret[i]', 'x[i]', 'y'), setup);
       generated[i] = Function(
-        'var n = arguments.length, i, x = arguments[0], y;\n' +
-        'var VV = generated.' + i + 'VV, VS = generated.' + i + 'VS, SV = generated.' + i + 'SV;\n' +
-        'var dim = generated.dim;\n' +
+        'let n = arguments.length, i, x = arguments[0], y;\n' +
+        'let VV = generated.' + i + 'VV, VS = generated.' + i + 'VS, SV = generated.' + i + 'SV;\n' +
+        'let dim = generated.dim;\n' +
         'for(i=1;i!==n;++i) { \n' +
         '  y = arguments[i];\n' +
         '  if(typeof x === "object") {\n' +
@@ -822,9 +823,9 @@ export const mapreducers = {
       generated[i + 'eqV'] = pointwise2(['ret[i]', 'x[i]'], codeeq('ret[i]', 'x[i]'), setup);
       generated[i + 'eqS'] = pointwise2(['ret[i]', 'x'], codeeq('ret[i]', 'x'), setup);
       generated[i + 'eq'] = Function(
-        'var n = arguments.length, i, x = arguments[0], y;\n' +
-        'var V = generated.' + i + 'eqV, S = generated.' + i + 'eqS\n' +
-        'var s = dim(x);\n' +
+        'let n = arguments.length, i, x = arguments[0], y;\n' +
+        'let V = generated.' + i + 'eqV, S = generated.' + i + 'eqS\n' +
+        'let s = dim(x);\n' +
         'for(i=1;i!==n;++i) { \n' +
         '  y = arguments[i];\n' +
         '  if(typeof y === "object") _biforeach(x,y,s,0,V);\n' +
@@ -842,25 +843,25 @@ export const mapreducers = {
   }
   for (i in ops1) {
     if (ops1.hasOwnProperty(i)) {
-      setup = '';
+      let setup = '';
       o = ops1[i];
       if (myIndexOf.call(mathfuns, i) !== -1) {
-        if (Math.hasOwnProperty(o)) setup = 'var ' + o + ' = Math.' + o + ';\n';
+        if (Math.hasOwnProperty(o)) setup = 'let ' + o + ' = Math.' + o + ';\n';
       }
       base[i + 'eqV'] = pointwise2(['ret[i]'], 'ret[i] = ' + o + '(ret[i]);', setup);
       base[i + 'eq'] = Function('x',
         'if(typeof x !== "object") return ' + o + 'x\n' +
-        'var i;\n' +
-        'var V = generated.' + i + 'eqV;\n' +
-        'var s = dim(x);\n' +
+        'let i;\n' +
+        'let V = generated.' + i + 'eqV;\n' +
+        'let s = dim(x);\n' +
         '_foreach(x,s,0,V);\n' +
         'return x;\n');
       base[i + 'V'] = pointwise2(['x[i]'], 'ret[i] = ' + o + '(x[i]);', setup);
       base[i] = Function('x',
         'if(typeof x !== "object") return ' + o + '(x)\n' +
-        'var i;\n' +
-        'var V = generated.' + i + 'V;\n' +
-        'var s = dim(x);\n' +
+        'let i;\n' +
+        'let V = generated.' + i + 'V;\n' +
+        'let s = dim(x);\n' +
         'return _foreach2(x,s,0,V);\n');
     }
   }
@@ -882,8 +883,8 @@ export const mapreducers = {
         'if(typeof s === "undefined") s = dim(x);\n' +
         'if(typeof k === "undefined") k = 0;\n' +
         'if(k === s.length-1) return generated.' + i + 'V(x);\n' +
-        'var xi;\n' +
-        'var n = x.length, i;\n' +
+        'let xi;\n' +
+        'let n = x.length, i;\n' +
         'for(i=n-1;i!==-1;--i) {\n' +
         '   xi = arguments.callee(x[i]);\n' +
         o[0] + ';\n' +
@@ -893,9 +894,9 @@ export const mapreducers = {
   }
 }());
 
-export const truncVV = pointwise(['x[i]', 'y[i]'], 'ret[i] = round(x[i]/y[i])*y[i];', 'var round = Math.round;');
-export const truncVS = pointwise(['x[i]', 'y'], 'ret[i] = round(x[i]/y)*y;', 'var round = Math.round;');
-export const truncSV = pointwise(['x', 'y[i]'], 'ret[i] = round(x/y[i])*y[i];', 'var round = Math.round;');
+export const truncVV = pointwise(['x[i]', 'y[i]'], 'ret[i] = round(x[i]/y[i])*y[i];', 'let round = Math.round;');
+export const truncVS = pointwise(['x[i]', 'y'], 'ret[i] = round(x[i]/y)*y;', 'let round = Math.round;');
+export const truncSV = pointwise(['x', 'y[i]'], 'ret[i] = round(x/y[i])*y[i];', 'let round = Math.round;');
 
 export function trunc(x, y) {
   if (typeof x === "object") {
@@ -909,14 +910,14 @@ export function trunc(x, y) {
 export const clone = generated.clone;
 
 export function inv(x) {
-  var s = dim(x), abs = Math.abs, m = s[0], n = s[1];
-  var A = allocclone(x), Ai, Aj;
-  var I = allocidentity(m), Ii, Ij;
+  let s = dim(x), abs = Math.abs, m = s[0], n = s[1];
+  let A = allocclone(x), Ai, Aj;
+  let I = allocidentity(m), Ii, Ij;
 
-  var i, j, k, x;
+  let i, j, k;
   for (j = 0; j < n; ++j) {
-    var i0 = -1;
-    var v0 = -1;
+    let i0 = -1;
+    let v0 = -1;
     for (i = j; i !== m; ++i) {
       k = abs(A[i][j]);
       if (k > v0) {
@@ -958,9 +959,9 @@ export function inv(x) {
 }
 
 export function det(x) {
-  var s = dim(x);
+  let s = dim(x);
   if (s.length !== 2 || s[0] !== s[1]) { throw new Error('numeric: det() only works on square matrices'); }
-  var n = s[0], ret = 1, i, j, k, A = allocclone(x), Aj, Ai, alpha, temp, k1, k2, k3;
+  let n = s[0], ret = 1, i, j, k, A = allocclone(x), Aj, Ai, alpha, temp, k1, k2, k3;
   for (j = 0; j < n - 1; j++) {
     k = j;
     for (i = j + 1; i < n; i++) { if (Math.abs(A[i][j]) > Math.abs(A[k][j])) { k = i; } }
@@ -988,7 +989,7 @@ export function det(x) {
 }
 
 export function transpose(x) {
-  var i, j, m = x.length, n = x[0].length, ret = Array(n), A0, A1, Bj;
+  let i, j, m = x.length, n = x[0].length, ret = Array(n), A0, A1, Bj;
   for (j = 0; j < n; j++) {
     ret[j] = Array(m);
   }
@@ -1023,7 +1024,7 @@ export function transpose(x) {
 }
 
 export function negtranspose(x) {
-  var i, j, m = x.length, n = x[0].length, ret = Array(n), A0, A1, Bj;
+  let i, j, m = x.length, n = x[0].length, ret = Array(n), A0, A1, Bj;
   for (j = 0; j < n; j++) {
     ret[j] = Array(m);
   }
@@ -1058,7 +1059,7 @@ export function negtranspose(x) {
 }
 
 export function _random(s, k) {
-  var i, n = s[k], ret = Array(n), rnd;
+  let i, n = s[k], ret = Array(n), rnd;
   if (k === s.length - 1) {
     rnd = Math.random;
     for (i = n - 1; i >= 1; i -= 2) {
@@ -1085,17 +1086,17 @@ export function norm2(x) {
 export function linspace(a, b, n) {
   if (typeof n === "undefined") n = Math.max(Math.round(b - a) + 1, 1);
   if (n < 2) { return n === 1 ? [a] : []; }
-  var i, ret = Array(n);
+  let i, ret = Array(n);
   n--;
   for (i = n; i >= 0; i--) { ret[i] = (i*b + (n - i)*a)/n; }
   return ret;
 }
 
 export function getBlock(x, from, to) {
-  var s = dim(x);
+  let s = dim(x);
 
   function foo(x, k) {
-    var i, a = from[k], n = to[k] - a, ret = Array(n);
+    let i, a = from[k], n = to[k] - a, ret = Array(n);
     if (k === s.length - 1) {
       for (i = n; i >= 0; i--) { ret[i] = x[i + a]; }
       return ret;
@@ -1108,10 +1109,10 @@ export function getBlock(x, from, to) {
 }
 
 export function setBlock(x, from, to, B) {
-  var s = dim(x);
+  let s = dim(x);
 
   function foo(x, y, k) {
-    var i, a = from[k], n = to[k] - a;
+    let i, a = from[k], n = to[k] - a;
     if (k === s.length - 1) { for (i = n; i >= 0; i--) { x[i + a] = y[i]; } }
     for (i = n; i >= 0; i--) { foo(x[i + a], y[i], k + 1); }
   }
@@ -1121,9 +1122,9 @@ export function setBlock(x, from, to, B) {
 }
 
 export function getRange(A, I, J) {
-  var m = I.length, n = J.length;
-  var i, j;
-  var B = Array(m), Bi, AI;
+  let m = I.length, n = J.length;
+  let i, j;
+  let B = Array(m), Bi, AI;
   for (i = m - 1; i !== -1; --i) {
     B[i] = Array(n);
     Bi = B[i];
@@ -1136,9 +1137,9 @@ export function getRange(A, I, J) {
 }
 
 export function blockMatrix(X) {
-  var s = dim(X);
+  let s = dim(X);
   if (s.length < 4) return blockMatrix([X]);
-  var m = s[0], n = s[1], M, N, i, j, Xij;
+  let m = s[0], n = s[1], M, N, i, j, Xij;
   M = 0;
   N = 0;
   for (i = 0; i < m; ++i) {
@@ -1147,11 +1148,11 @@ export function blockMatrix(X) {
   for (j = 0; j < n; ++j) {
     N += X[0][j][0].length;
   }
-  var Z = Array(M);
+  let Z = Array(M);
   for (i = 0; i < M; ++i) {
     Z[i] = Array(N);
   }
-  var I = 0, J, ZI, k, l, Xijk;
+  let I = 0, J, ZI, k, l, Xijk;
   for (i = 0; i < m; ++i) {
     J = N;
     for (j = n - 1; j !== -1; --j) {
@@ -1172,11 +1173,11 @@ export function blockMatrix(X) {
 
 export function tensor(x, y) {
   if (typeof x === "number" || typeof y === "number") return generated.mul(x, y);
-  var s1 = dim(x), s2 = dim(y);
+  let s1 = dim(x), s2 = dim(y);
   if (s1.length !== 1 || s2.length !== 1) {
     throw new Error('numeric: tensor product is only defined for vectors');
   }
-  var m = s1[0], n = s2[0], A = Array(m), Ai, i, j, xi;
+  let m = s1[0], n = s2[0], A = Array(m), Ai, i, j, xi;
   for (i = m - 1; i >= 0; i--) {
     Ai = Array(n);
     xi = x[i];
@@ -1206,9 +1207,9 @@ export class T {
   }
 
   reciprocal() {
-    var mul = generated.mul, div = generated.div;
+    let mul = generated.mul, div = generated.div;
     if (this.y) {
-      var d = generated.add(mul(this.x, this.x), mul(this.y, this.y));
+      let d = generated.add(mul(this.x, this.x), mul(this.y, this.y));
       return new T(div(this.x, d), div(generated.neg(this.y), d));
     }
     return new T(div(1, this.x));
@@ -1217,19 +1218,19 @@ export class T {
   div(y) {
     if (!(y instanceof T)) y = new T(y);
     if (y.y) { return this.mul(y.reciprocal()); }
-    var div = generated.div;
+    let div = generated.div;
     if (this.y) { return new T(div(this.x, y.x), div(this.y, y.x)); }
     return new T(div(this.x, y.x));
   }
 
   transjugate() {
-    var t = transpose, x = this.x, y = this.y;
+    let t = transpose, x = this.x, y = this.y;
     if (y) { return new T(t(x), negtranspose(y)); }
     return new T(t(x));
   }
 
   transpose() {
-    var t = transpose, x = this.x, y = this.y;
+    let t = transpose, x = this.x, y = this.y;
     if (y) { return new T(t(x), t(y)); }
     return new T(t(x));
   }
@@ -1240,20 +1241,20 @@ export function t(x, y) {
 }
 
 export function Tbinop(rr, rc, cr, cc, setup) {
-  var io = Array.prototype.indexOf;
+  let io = Array.prototype.indexOf;
 
   if (typeof setup !== "string") {
-    var k;
+    let k;
     setup = '';
     for (k in generated) {
       if (generated.hasOwnProperty(k) && (rr.indexOf(k) >= 0 || rc.indexOf(k) >= 0 || cr.indexOf(k) >= 0 || cc.indexOf(k) >= 0) && k.length > 1) {
-        setup += 'var ' + k + ' = generated' + k + ';\n';
+        setup += 'let ' + k + ' = generated' + k + ';\n';
       }
     }
   }
 
   return Function(['y'],
-    'var x = this;\n' +
+    'let x = this;\n' +
     'if(!(y instanceof T)) { y = new T(y); }\n' +
     setup + '\n' +
     'if(x.y) {' +
@@ -1296,7 +1297,7 @@ T.prototype.dot = Tbinop(
 export function Tunop(r, c, s) {
   if (typeof s !== "string") { s = ''; }
   return Function(
-    'var x = this;\n' +
+    'let x = this;\n' +
     s + '\n' +
     'if(x.y) {' +
     '  ' + c + ';\n' +
@@ -1308,14 +1309,14 @@ export function Tunop(r, c, s) {
 T.prototype.exp = Tunop(
   'return new T(ex)',
   'return new T(mul(cos(x.y),ex),mul(sin(x.y),ex))',
-  'var ex = generated.exp(x.x), cos = generated.cos, sin = generated.sin, mul = generated.mul;');
+  'let ex = generated.exp(x.x), cos = generated.cos, sin = generated.sin, mul = generated.mul;');
 T.prototype.conj = Tunop(
   'return new T(x.x);',
   'return new T(x.x,generated.neg(x.y));');
 T.prototype.neg = Tunop(
   'return new T(neg(x.x));',
   'return new T(neg(x.x),neg(x.y));',
-  'var neg = generated.neg;');
+  'let neg = generated.neg;');
 T.prototype.sin = Tunop(
   'return new T(generated.sin(x.x))',
   'return x.exp().sub(x.neg().exp()).div(new T(0,2));');
@@ -1325,23 +1326,24 @@ T.prototype.cos = Tunop(
 T.prototype.abs = Tunop(
   'return new T(generated.abs(x.x));',
   'return new T(generated.sqrt(generated.add(mul(x.x,x.x),mul(x.y,x.y))));',
-  'var mul = generated.mul;');
+  'let mul = generated.mul;');
 T.prototype.log = Tunop(
   'return new T(generated.log(x.x));',
-  'var theta = new T(generated.atan2(x.y,x.x)), r = x.abs();\n' +
+  'let theta = new T(generated.atan2(x.y,x.x)), r = x.abs();\n' +
   'return new T(generated.log(r.x),theta.x);');
 T.prototype.norm2 = Tunop(
   'return norm2(x.x);',
-  'var f = norm2Squared;\n' +
+  'let f = norm2Squared;\n' +
   'return Math.sqrt(f(x.x)+f(x.y));');
 T.prototype.inv = function inv() {
-  var A = this;
+  let A = this;
   if (typeof A.y === "undefined") { return new T(inv(A.x)); }
-  var n = A.x.length, i, j, k;
-  var Rx = allocidentity(n), Ry = rep([n, n], 0);
-  var Ax = allocclone(A.x), Ay = allocclone(A.y);
-  var Aix, Aiy, Ajx, Ajy, Rix, Riy, Rjx, Rjy;
-  var i, j, k, d, d1, ax, ay, bx, by, temp;
+  let n = A.x.length;
+
+  let Rx = allocidentity(n), Ry = rep([n, n], 0);
+  let Ax = allocclone(A.x), Ay = allocclone(A.y);
+  let Aix, Aiy, Ajx, Ajy, Rix, Riy, Rjx, Rjy;
+  let i, j, k, d, d1, ax, ay, bx, by, temp;
   for (i = 0; i < n; i++) {
     ax = Ax[i][i];
     ay = Ay[i][i];
@@ -1428,7 +1430,7 @@ T.prototype.inv = function inv() {
   return new T(Rx, Ry);
 }
 T.prototype.get = function get(i) {
-  var x = this.x, y = this.y, k = 0, ik, n = i.length;
+  let x = this.x, y = this.y, k = 0, ik, n = i.length;
   if (y) {
     while (k < n) {
       ik = i[k];
@@ -1446,7 +1448,7 @@ T.prototype.get = function get(i) {
   return new T(x);
 }
 T.prototype.set = function set(i, v) {
-  var x = this.x, y = this.y, k = 0, ik, n = i.length, vx = v.x, vy = v.y;
+  let x = this.x, y = this.y, k = 0, ik, n = i.length, vx = v.x, vy = v.y;
   if (n === 0) {
     if (vy) { this.y = vy; } else if (y) { this.y = undefined; }
     this.x = x;
@@ -1491,8 +1493,8 @@ T.prototype.set = function set(i, v) {
   return this;
 }
 T.prototype.getRows = function getRows(i0, i1) {
-  var n = i1 - i0 + 1, j;
-  var rx = Array(n), ry, x = this.x, y = this.y;
+  let n = i1 - i0 + 1, j;
+  let rx = Array(n), ry, x = this.x, y = this.y;
   for (j = i0; j <= i1; j++) { rx[j - i0] = x[j]; }
   if (y) {
     ry = Array(n);
@@ -1502,8 +1504,8 @@ T.prototype.getRows = function getRows(i0, i1) {
   return new T(rx);
 }
 T.prototype.setRows = function setRows(i0, i1, A) {
-  var j;
-  var rx = this.x, ry = this.y, x = A.x, y = A.y;
+  let j;
+  let rx = this.x, ry = this.y, x = A.x, y = A.y;
   for (j = i0; j <= i1; j++) { rx[j] = x[j - i0]; }
   if (y) {
     if (!ry) {
@@ -1517,12 +1519,12 @@ T.prototype.setRows = function setRows(i0, i1, A) {
   return this;
 }
 T.prototype.getRow = function getRow(k) {
-  var x = this.x, y = this.y;
+  let x = this.x, y = this.y;
   if (y) { return new T(x[k], y[k]); }
   return new T(x[k]);
 }
 T.prototype.setRow = function setRow(i, v) {
-  var rx = this.x, ry = this.y, x = v.x, y = v.y;
+  let rx = this.x, ry = this.y, x = v.x, y = v.y;
   rx[i] = x;
   if (y) {
     if (!ry) {
@@ -1537,13 +1539,13 @@ T.prototype.setRow = function setRow(i, v) {
 }
 
 T.prototype.getBlock = function getBlock(from, to) {
-  var x = this.x, y = this.y, b = getBlock;
+  let x = this.x, y = this.y, b = getBlock;
   if (y) { return new T(b(x, from, to), b(y, from, to)); }
   return new T(b(x, from, to));
 }
 T.prototype.setBlock = function setBlock(from, to, A) {
   if (!(A instanceof T)) A = new T(A);
-  var x = this.x, y = this.y, b = setBlock, Ax = A.x, Ay = A.y;
+  let x = this.x, y = this.y, b = setBlock, Ax = A.x, Ay = A.y;
   if (Ay) {
     if (!y) {
       this.y = rep(dim(this), 0);
@@ -1557,15 +1559,15 @@ T.prototype.setBlock = function setBlock(from, to, A) {
   if (y) b(y, from, to, rep(dim(Ax), 0));
 }
 T.rep = function rep(s, v) {
-  var T = T;
+  let T = T;
   if (!(v instanceof T)) v = new T(v);
-  var x = v.x, y = v.y, r = rep;
+  let x = v.x, y = v.y, r = rep;
   if (y) return new T(r(s, x), r(s, y));
   return new T(r(s, x));
 }
 T.diag = function diag(d) {
   if (!(d instanceof T)) d = new T(d);
-  var x = d.x, y = d.y, diag = diag;
+  let x = d.x, y = d.y, diag = diag;
   if (y) return new T(diag(x), diag(y));
   return new T(diag(x));
 }
@@ -1577,8 +1579,8 @@ T.identity = function identity(n) {
   return new T(identity(n));
 }
 T.prototype.getDiag = function getDiag() {
-  var n = base;
-  var x = this.x, y = this.y;
+  let n = base;
+  let x = this.x, y = this.y;
   if (y) { return new n.T(n.getDiag(x), n.getDiag(y)); }
   return new n.T(n.getDiag(x));
 }
@@ -1588,11 +1590,11 @@ T.prototype.getDiag = function getDiag() {
 export const div = generated.div;
 
 export function house(x) {
-  var v = allocclone(x);
-  var s = x[0] >= 0 ? 1 : -1;
-  var alpha = s*norm2(x);
+  let v = allocclone(x);
+  let s = x[0] >= 0 ? 1 : -1;
+  let alpha = s*norm2(x);
   v[0] += alpha;
-  var foo = norm2(v);
+  let foo = norm2(v);
   if (foo === 0) { /* this should not happen */
     throw new Error('eig: internal error');
   }
@@ -1600,9 +1602,9 @@ export function house(x) {
 }
 
 export function toUpperHessenberg(me) {
-  var s = dim(me);
+  let s = dim(me);
   if (s.length !== 2 || s[0] !== s[1]) { throw new Error('numeric: toUpperHessenberg() only works on square matrices'); }
-  var m = s[0], i, j, k, x, v, A = allocclone(me), B, C, Ai, Ci, Q = allocidentity(m), Qi;
+  let m = s[0], i, j, k, x, v, A = allocclone(me), B, C, Ai, Ci, Q = allocidentity(m), Qi;
   for (j = 0; j < m - 2; j++) {
     x = Array(m - j - 1);
     for (i = j + 1; i < m; i++) { x[i - j - 1] = A[i][j]; }
@@ -1648,16 +1650,16 @@ export const epsilon = 2.220446049250313e-16;
 export function QRFrancis(H, maxiter) {
   if (typeof maxiter === "undefined") { maxiter = 10000; }
   H = allocclone(H);
-  //var H0 = allocclone(H);
-  var s = dim(H), m = s[0], x, v, a, b, c, d, det, tr, Hloc, Q = allocidentity(m), Qi, Hi, B, C, Ci, i, j, k,
+  //let H0 = allocclone(H);
+  let s = dim(H), m = s[0], x, v, a, b, c, d, det, tr, Hloc, Q = allocidentity(m), Qi, Hi, B, C, Ci, i, j, k,
       iter;
   if (m < 3) { return {Q: Q, B: [[0, m - 1]]}; }
 
   for (iter = 0; iter < maxiter; iter++) {
     for (j = 0; j < m - 1; j++) {
       if (Math.abs(H[j + 1][j]) < epsilon*(Math.abs(H[j][j]) + Math.abs(H[j + 1][j + 1]))) {
-        var QH1 = QRFrancis(getBlock(H, [0, 0], [j, j]), maxiter);
-        var QH2 = QRFrancis(getBlock(H, [j + 1, j + 1], [m - 1, m - 1]), maxiter);
+        let QH1 = QRFrancis(getBlock(H, [0, 0], [j, j]), maxiter);
+        let QH2 = QRFrancis(getBlock(H, [j + 1, j + 1], [m - 1, m - 1]), maxiter);
         B = Array(j + 1);
         for (i = 0; i <= j; i++) { B[i] = Q[i]; }
         C = dot(QH1.Q, B);
@@ -1677,7 +1679,7 @@ export function QRFrancis(H, maxiter) {
     det = (a*d - b*c);
     Hloc = getBlock(H, [0, 0], [2, 2]);
     if (tr*tr >= 4*det) {
-      var s1, s2;
+      let s1, s2;
       s1 = 0.5*(tr + Math.sqrt(tr*tr - 4*det));
       s2 = 0.5*(tr - Math.sqrt(tr*tr - 4*det));
       Hloc = generated.add(generated.sub(generated.dot(Hloc, Hloc),
@@ -1717,12 +1719,12 @@ export function QRFrancis(H, maxiter) {
         Qi[k] -= 2*Ci[k];
       }
     }
-    var J;
+    let J;
     for (j = 0; j < m - 2; j++) {
       for (k = j; k <= j + 1; k++) {
         if (Math.abs(H[k + 1][k]) < epsilon*(Math.abs(H[k][k]) + Math.abs(H[k + 1][k + 1]))) {
-          var QH1 = QRFrancis(getBlock(H, [0, 0], [k, k]), maxiter);
-          var QH2 = QRFrancis(getBlock(H, [k + 1, k + 1], [m - 1, m - 1]), maxiter);
+          let QH1 = QRFrancis(getBlock(H, [0, 0], [k, k]), maxiter);
+          let QH2 = QRFrancis(getBlock(H, [k + 1, k + 1], [m - 1, m - 1]), maxiter);
           B = Array(k + 1);
           for (i = 0; i <= k; i++) { B[i] = Q[i]; }
           C = dot(QH1.Q, B);
@@ -1774,13 +1776,13 @@ export function QRFrancis(H, maxiter) {
 }
 
 export function eig(A, maxiter) {
-  var QH = toUpperHessenberg(A);
-  var QB = QRFrancis(QH.H, maxiter);
-  var n = A.length, i, k, flag = false, B = QB.B, H = dot(QB.Q, dot(QH.H, transpose(QB.Q)));
-  var Q = new T(dot(QB.Q, QH.Q)), Q0;
-  var m = B.length, j;
-  var a, b, c, d, p1, p2, disc, x, y, p, q, n1, n2;
-  var sqrt = Math.sqrt;
+  let QH = toUpperHessenberg(A);
+  let QB = QRFrancis(QH.H, maxiter);
+  let n = A.length, i, k, flag = false, B = QB.B, H = dot(QB.Q, dot(QH.H, transpose(QB.Q)));
+  let Q = new T(dot(QB.Q, QH.Q)), Q0;
+  let m = B.length, j;
+  let a, b, c, d, p1, p2, disc, x, y, p, q, n1, n2;
+  let sqrt = Math.sqrt;
   for (k = 0; k < m; k++) {
     i = B[k][0];
     if (i === B[k][1]) {
@@ -1834,11 +1836,14 @@ export function eig(A, maxiter) {
       }
     }
   }
-  var R = Q.dot(A).dot(Q.transjugate()), n = A.length, E = T.identity(n);
+
+  n = A.length;
+  let R = Q.dot(A).dot(Q.transjugate()), E = T.identity(n);
+
   for (j = 0; j < n; j++) {
     if (j > 0) {
       for (k = j - 1; k >= 0; k--) {
-        var Rk = R.get([k, k]), Rj = R.get([j, j]);
+        let Rk = R.get([k, k]), Rj = R.get([j, j]);
         if (generated.neq(Rk.x, Rj.x) || generated.neq(Rk.y, Rj.y)) {
           x = R.getRow(k).getBlock([k], [j - 1]);
           y = E.getRow(j).getBlock([k], [j - 1]);
@@ -1861,7 +1866,7 @@ export function eig(A, maxiter) {
 
 // 5. Compressed Column Storage matrices
 export function ccsSparse(A) {
-  var m = A.length, n, foo, i, j, counts = [];
+  let m = A.length, foo, i, j, counts = [];
   for (i = m - 1; i !== -1; --i) {
     foo = A[i];
     for (j in foo) {
@@ -1872,13 +1877,13 @@ export function ccsSparse(A) {
       if (foo[j] !== 0) counts[j]++;
     }
   }
-  var n = counts.length;
-  var Ai = Array(n + 1);
+  let n = counts.length;
+  let Ai = Array(n + 1);
   Ai[0] = 0;
   for (i = 0; i < n; ++i) {
     Ai[i + 1] = Ai[i] + counts[i];
   }
-  var Aj = Array(Ai[n]), Av = Array(Ai[n]);
+  let Aj = Array(Ai[n]), Av = Array(Ai[n]);
   for (i = m - 1; i !== -1; --i) {
     foo = A[i];
     for (j in foo) {
@@ -1893,8 +1898,8 @@ export function ccsSparse(A) {
 }
 
 export function ccsFull(A) {
-  var Ai = A[0], Aj = A[1], Av = A[2], s = ccsDim(A), m = s[0], n = s[1], i, j, j0, j1, k;
-  var B = rep([m, n], 0);
+  let Ai = A[0], Aj = A[1], Av = A[2], s = ccsDim(A), m = s[0], n = s[1], i, j, j0, j1, k;
+  let B = rep([m, n], 0);
   for (i = 0; i < n; i++) {
     j0 = Ai[i];
     j1 = Ai[i + 1];
@@ -1904,13 +1909,13 @@ export function ccsFull(A) {
 }
 
 export function ccsTSolve(A, b, x, bj, xj) {
-  var Ai = A[0], Aj = A[1], Av = A[2], m = Ai.length - 1, max = Math.max, n = 0;
+  let Ai = A[0], Aj = A[1], Av = A[2], m = Ai.length - 1, max = Math.max, n = 0;
   if (typeof bj === "undefined") x = rep([m], 0);
   if (typeof bj === "undefined") bj = linspace(0, x.length - 1);
   if (typeof xj === "undefined") xj = [];
 
   function dfs(j) {
-    var k;
+    let k;
     if (x[j] !== 0) return;
     x[j] = 1;
     for (k = Ai[j]; k < Ai[j + 1]; ++k) {
@@ -1920,7 +1925,7 @@ export function ccsTSolve(A, b, x, bj, xj) {
     ++n;
   }
 
-  var i, j, j0, j1, k, l, l0, l1, a;
+  let i, j, j0, j1, k, l, l0, l1, a;
   for (i = bj.length - 1; i !== -1; --i) { dfs(bj[i]); }
   xj.length = n;
   for (i = xj.length - 1; i !== -1; --i) { x[xj[i]] = 0; }
@@ -1955,8 +1960,8 @@ export class ccsDFS {
   }
 
   dfs(J, Ai, Aj, x, xj, Pinv) {
-    var m = 0, foo, n = xj.length;
-    var k = this.k, k1 = this.k1, j = this.j, km, k11;
+    let m = 0, foo, n = xj.length;
+    let k = this.k, k1 = this.k1, j = this.j, km, k11;
     if (x[J] !== 0) return;
     x[J] = 1;
     j[0] = J;
@@ -1986,10 +1991,10 @@ export class ccsDFS {
 }
 
 export function ccsLPSolve(A, B, x, xj, I, Pinv, dfs) {
-  var Ai = A[0], Aj = A[1], Av = A[2], m = Ai.length - 1, n = 0;
-  var Bi = B[0], Bj = B[1], Bv = B[2];
+  let Ai = A[0], Aj = A[1], Av = A[2], m = Ai.length - 1, n = 0;
+  let Bi = B[0], Bj = B[1], Bv = B[2];
 
-  var i, i0, i1, j, J, j0, j1, k, l, l0, l1, a;
+  let i, i0, i1, j, J, j0, j1, k, l, l0, l1, a;
   i0 = Bi[I];
   i1 = Bi[I + 1];
   xj.length = 0;
@@ -2019,14 +2024,14 @@ export function ccsLPSolve(A, B, x, xj, I, Pinv, dfs) {
 }
 
 export function ccsLUP1(A, threshold) {
-  var m = A[0].length - 1;
-  var L = [rep([m + 1], 0), [], []], U = [rep([m + 1], 0), [], []];
-  var Li = L[0], Lj = L[1], Lv = L[2], Ui = U[0], Uj = U[1], Uv = U[2];
-  var x = rep([m], 0), xj = rep([m], 0);
-  var i, j, k, j0, j1, a, e, c, d, K;
-  var sol = ccsLPSolve, max = Math.max, abs = Math.abs;
-  var P = linspace(0, m - 1), Pinv = linspace(0, m - 1);
-  var dfs = new ccsDFS(m);
+  let m = A[0].length - 1;
+  let L = [rep([m + 1], 0), [], []], U = [rep([m + 1], 0), [], []];
+  let Li = L[0], Lj = L[1], Lv = L[2], Ui = U[0], Uj = U[1], Uv = U[2];
+  let x = rep([m], 0), xj = rep([m], 0);
+  let i, j, k, j0, j1, a, e, c, d, K;
+  let sol = ccsLPSolve, max = Math.max, abs = Math.abs;
+  let P = linspace(0, m - 1), Pinv = linspace(0, m - 1);
+  let dfs = new ccsDFS(m);
   if (typeof threshold === "undefined") { threshold = 1; }
   for (i = 0; i < m; ++i) {
     sol(L, A, x, xj, i, Pinv, dfs);
@@ -2088,8 +2093,8 @@ export class ccsDFS0 {
   }
 
   dfs(J, Ai, Aj, x, xj, Pinv, P) {
-    var m = 0, foo, n = xj.length;
-    var k = this.k, k1 = this.k1, j = this.j, km, k11;
+    let m = 0, foo, n = xj.length;
+    let k = this.k, k1 = this.k1, j = this.j, km, k11;
     if (x[J] !== 0) return;
     x[J] = 1;
     j[0] = J;
@@ -2121,10 +2126,10 @@ export class ccsDFS0 {
 }
 
 export function ccsLPSolve0(A, B, y, xj, I, Pinv, P, dfs) {
-  var Ai = A[0], Aj = A[1], Av = A[2], m = Ai.length - 1, n = 0;
-  var Bi = B[0], Bj = B[1], Bv = B[2];
+  let Ai = A[0], Aj = A[1], Av = A[2], m = Ai.length - 1, n = 0;
+  let Bi = B[0], Bj = B[1], Bv = B[2];
 
-  var i, i0, i1, j, J, j0, j1, k, l, l0, l1, a;
+  let i, i0, i1, j, J, j0, j1, k, l, l0, l1, a;
   i0 = Bi[I];
   i1 = Bi[I + 1];
   xj.length = 0;
@@ -2157,14 +2162,14 @@ export function ccsLPSolve0(A, B, y, xj, I, Pinv, P, dfs) {
 }
 
 export function ccsLUP0(A, threshold) {
-  var m = A[0].length - 1;
-  var L = [rep([m + 1], 0), [], []], U = [rep([m + 1], 0), [], []];
-  var Li = L[0], Lj = L[1], Lv = L[2], Ui = U[0], Uj = U[1], Uv = U[2];
-  var y = rep([m], 0), xj = rep([m], 0);
-  var i, j, k, j0, j1, a, e, c, d, K;
-  var sol = ccsLPSolve0, max = Math.max, abs = Math.abs;
-  var P = linspace(0, m - 1), Pinv = linspace(0, m - 1);
-  var dfs = new ccsDFS0(m);
+  let m = A[0].length - 1;
+  let L = [rep([m + 1], 0), [], []], U = [rep([m + 1], 0), [], []];
+  let Li = L[0], Lj = L[1], Lv = L[2], Ui = U[0], Uj = U[1], Uv = U[2];
+  let y = rep([m], 0), xj = rep([m], 0);
+  let i, j, k, j0, j1, a, e, c, d, K;
+  let sol = ccsLPSolve0, max = Math.max, abs = Math.abs;
+  let P = linspace(0, m - 1), Pinv = linspace(0, m - 1);
+  let dfs = new ccsDFS0(m);
   if (typeof threshold === "undefined") { threshold = 1; }
   for (i = 0; i < m; ++i) {
     sol(L, A, y, xj, i, Pinv, P, dfs);
@@ -2222,17 +2227,17 @@ export function ccsDim(A) {
 }
 
 export function ccsGetBlock(A, i, j) {
-  var s = ccsDim(A), m = s[0], n = s[1];
+  let s = ccsDim(A), m = s[0], n = s[1];
   if (typeof i === "undefined") { i = linspace(0, m - 1); } else if (typeof i === "number") { i = [i]; }
   if (typeof j === "undefined") { j = linspace(0, n - 1); } else if (typeof j === "number") { j = [j]; }
-  var p, p0, p1, P = i.length, q, Q = j.length, r, jq, ip;
-  var Bi = rep([n], 0), Bj = [], Bv = [], B = [Bi, Bj, Bv];
-  var Ai = A[0], Aj = A[1], Av = A[2];
-  var x = rep([m], 0), count = 0, flags = rep([m], 0);
+  let p, p0, p1, P = i.length, q, Q = j.length, r, jq, ip;
+  let Bi = rep([n], 0), Bj = [], Bv = [], B = [Bi, Bj, Bv];
+  let Ai = A[0], Aj = A[1], Av = A[2];
+  let x = rep([m], 0), count = 0, flags = rep([m], 0);
   for (q = 0; q < Q; ++q) {
     jq = j[q];
-    var q0 = Ai[jq];
-    var q1 = Ai[jq + 1];
+    let q0 = Ai[jq];
+    let q1 = Ai[jq + 1];
     for (p = q0; p < q1; ++p) {
       r = Aj[p];
       flags[r] = 1;
@@ -2256,13 +2261,13 @@ export function ccsGetBlock(A, i, j) {
 }
 
 export function ccsDot(A, B) {
-  var Ai = A[0], Aj = A[1], Av = A[2];
-  var Bi = B[0], Bj = B[1], Bv = B[2];
-  var sA = ccsDim(A), sB = ccsDim(B);
-  var m = sA[0], n = sA[1], o = sB[1];
-  var x = rep([m], 0), flags = rep([m], 0), xj = Array(m);
-  var Ci = rep([o], 0), Cj = [], Cv = [], C = [Ci, Cj, Cv];
-  var i, j, k, j0, j1, i0, i1, l, p, a, b;
+  let Ai = A[0], Aj = A[1], Av = A[2];
+  let Bi = B[0], Bj = B[1], Bv = B[2];
+  let sA = ccsDim(A), sB = ccsDim(B);
+  let m = sA[0], n = sA[1], o = sB[1];
+  let x = rep([m], 0), flags = rep([m], 0), xj = Array(m);
+  let Ci = rep([o], 0), Cj = [], Cv = [], C = [Ci, Cj, Cv];
+  let i, j, k, j0, j1, i0, i1, l, p, a, b;
   for (k = 0; k !== o; ++k) {
     j0 = Bi[k];
     j1 = Bi[k + 1];
@@ -2299,21 +2304,21 @@ export function ccsDot(A, B) {
 }
 
 export function ccsLUPSolve(LUP, B) {
-  var L = LUP.L, U = LUP.U, P = LUP.P;
-  var Bi = B[0];
-  var flag = false;
+  let L = LUP.L, U = LUP.U, P = LUP.P;
+  let Bi = B[0];
+  let flag = false;
   if (typeof Bi !== "object") {
     B = [[0, B.length], linspace(0, B.length - 1), B];
     Bi = B[0];
     flag = true;
   }
-  var Bj = B[1], Bv = B[2];
-  var n = L[0].length - 1, m = Bi.length - 1;
-  var x = rep([n], 0), xj = Array(n);
-  var b = rep([n], 0), bj = Array(n);
-  var Xi = rep([m + 1], 0), Xj = [], Xv = [];
-  var sol = ccsTSolve;
-  var i, j, j0, j1, k, J, N = 0;
+  let Bj = B[1], Bv = B[2];
+  let n = L[0].length - 1, m = Bi.length - 1;
+  let x = rep([n], 0), xj = Array(n);
+  let b = rep([n], 0), bj = Array(n);
+  let Xi = rep([m + 1], 0), Xj = [], Xv = [];
+  let sol = ccsTSolve;
+  let i, j, j0, j1, k, J, N = 0;
   for (i = 0; i < m; ++i) {
     k = 0;
     j0 = Bi[i];
@@ -2349,13 +2354,13 @@ export function ccsLUPSolve(LUP, B) {
 export function ccsbinop(body, setup) {
   if (typeof setup === "undefined") setup = '';
   return Function('X', 'Y',
-    'var Xi = X[0], Xj = X[1], Xv = X[2];\n' +
-    'var Yi = Y[0], Yj = Y[1], Yv = Y[2];\n' +
-    'var n = Xi.length-1,m = Math.max(generated.sup(Xj),generated.sup(Yj))+1;\n' +
-    'var Zi = rep([n+1],0), Zj = [], Zv = [];\n' +
-    'var x = rep([m],0),y = rep([m],0);\n' +
-    'var xk,yk,zk;\n' +
-    'var i,j,j0,j1,k,p=0;\n' +
+    'let Xi = X[0], Xj = X[1], Xv = X[2];\n' +
+    'let Yi = Y[0], Yj = Y[1], Yv = Y[2];\n' +
+    'let n = Xi.length-1,m = Math.max(generated.sup(Xj),generated.sup(Yj))+1;\n' +
+    'let Zi = rep([n+1],0), Zj = [], Zv = [];\n' +
+    'let x = rep([m],0),y = rep([m],0);\n' +
+    'let xk,yk,zk;\n' +
+    'let i,j,j0,j1,k,p=0;\n' +
     setup +
     'for(i=0;i<n;++i) {\n' +
     '  j0 = Xi[i]; j1 = Xi[i+1];\n' +
@@ -2395,7 +2400,7 @@ export function ccsbinop(body, setup) {
 };
 
 (function () {
-  var k, A, B, C;
+  let k, A, B, C;
   for (k in ops2) {
     if (isFinite(eval('1' + ops2[k] + '0'))) A = '[Y[0],Y[1],generated.' + k + '(X,Y[2])]';
     else A = 'NaN';
@@ -2413,17 +2418,17 @@ export function ccsbinop(body, setup) {
 }());
 
 export function ccsScatter(A) {
-  var Ai = A[0], Aj = A[1], Av = A[2];
-  var n = generated.sup(Aj) + 1, m = Ai.length;
-  var Ri = rep([n], 0), Rj = Array(m), Rv = Array(m);
-  var counts = rep([n], 0), i;
+  let Ai = A[0], Aj = A[1], Av = A[2];
+  let n = generated.sup(Aj) + 1, m = Ai.length;
+  let Ri = rep([n], 0), Rj = Array(m), Rv = Array(m);
+  let counts = rep([n], 0), i;
   for (i = 0; i < m; ++i) {
     counts[Aj[i]]++;
   }
   for (i = 0; i < n; ++i) {
     Ri[i + 1] = Ri[i] + counts[i];
   }
-  var ptr = Ri.slice(0), k, Aii;
+  let ptr = Ri.slice(0), k, Aii;
   for (i = 0; i < m; ++i) {
     Aii = Aj[i];
     k = ptr[Aii];
@@ -2435,10 +2440,10 @@ export function ccsScatter(A) {
 }
 
 export function ccsGather(A) {
-  var Ai = A[0], Aj = A[1], Av = A[2];
-  var n = Ai.length - 1, m = Aj.length;
-  var Ri = Array(m), Rj = Array(m), Rv = Array(m);
-  var i, j, j0, j1, p;
+  let Ai = A[0], Aj = A[1], Av = A[2];
+  let n = Ai.length - 1, m = Aj.length;
+  let Ri = Array(m), Rj = Array(m), Rv = Array(m);
+  let i, j, j0, j1, p;
   p = 0;
   for (i = 0; i < n; ++i) {
     j0 = Ai[i];
@@ -2461,7 +2466,7 @@ export function sdim(A, ret, k) {
   if (typeof k === "undefined") { k = 0; }
   if (!(k in ret)) { ret[k] = 0; }
   if (A.length > ret[k]) ret[k] = A.length;
-  var i;
+  let i;
   for (i in A) {
     if (A.hasOwnProperty(i)) dim(A[i], ret, k + 1);
   }
@@ -2471,7 +2476,7 @@ export function sdim(A, ret, k) {
 export function sclone(A, k, n) {
   if (typeof k === "undefined") { k = 0; }
   if (typeof n === "undefined") { n = sdim(A).length; }
-  var i, ret = Array(A.length);
+  let i, ret = Array(A.length);
   if (k === n - 1) {
     for (i in A) { if (A.hasOwnProperty(i)) ret[i] = A[i]; }
     return ret;
@@ -2483,7 +2488,7 @@ export function sclone(A, k, n) {
 }
 
 export function sdiag(d) {
-  var n = d.length, i, ret = Array(n), i1, i2, i3;
+  let n = d.length, i, ret = Array(n), i1, i2, i3;
   for (i = n - 1; i >= 1; i -= 2) {
     i1 = i - 1;
     ret[i] = [];
@@ -2503,7 +2508,7 @@ export function sidentity(n) {
 }
 
 export function stranspose(A) {
-  var ret = [], n = A.length, i, j, Ai;
+  let ret = [], n = A.length, i, j, Ai;
   for (i in A) {
     if (!(A.hasOwnProperty(i))) continue;
     Ai = A[i];
@@ -2521,9 +2526,9 @@ export function sLUP(A, tol) {
 };
 
 export function sdotMM(A, B) {
-  var p = A.length, q = B.length, BT = stranspose(B), r = BT.length, Ai, BTk;
-  var i, j, k, accum;
-  var ret = Array(p), reti;
+  let p = A.length, q = B.length, BT = stranspose(B), r = BT.length, Ai, BTk;
+  let i, j, k, accum;
+  let ret = Array(p), reti;
   for (i = p - 1; i >= 0; i--) {
     reti = [];
     Ai = A[i];
@@ -2542,8 +2547,8 @@ export function sdotMM(A, B) {
 }
 
 export function sdotMV(A, x) {
-  var p = A.length, Ai, i, j;
-  var ret = Array(p), accum;
+  let p = A.length, Ai, i, j;
+  let ret = Array(p), accum;
   for (i = p - 1; i >= 0; i--) {
     Ai = A[i];
     accum = 0;
@@ -2557,14 +2562,14 @@ export function sdotMV(A, x) {
 }
 
 export function sdotVV(x, y) {
-  var i, ret = 0;
+  let i, ret = 0;
   for (i in x) { if (x[i] && y[i]) ret += x[i]*y[i]; }
   return ret;
 }
 
 export function sdot(A, B) {
-  var m = sdim(A).length, n = sdim(B).length;
-  var k = m*1000 + n;
+  let m = sdim(A).length, n = sdim(B).length;
+  let k = m*1000 + n;
   switch (k) {
     case 0:
       return A*B;
@@ -2582,7 +2587,7 @@ export function sdot(A, B) {
 }
 
 export function sscatter(V) {
-  var n = V[0].length, Vij, i, j, m = V.length, A = [], Aj;
+  let n = V[0].length, Vij, i, j, m = V.length, A = [], Aj;
   for (i = n - 1; i >= 0; --i) {
     if (!V[m - 1][i]) continue;
     Aj = A;
@@ -2599,7 +2604,7 @@ export function sscatter(V) {
 export function sgather(A, ret, k) {
   if (typeof ret === "undefined") ret = [];
   if (typeof k === "undefined") k = [];
-  var n, i, Ai;
+  let n, i, Ai;
   n = k.length;
   for (i in A) {
     if (A.hasOwnProperty(i)) {
@@ -2626,14 +2631,14 @@ export function sgather(A, ret, k) {
 
 // 6. Coordinate matrices
 export function cLU(A) {
-  var I = A[0], J = A[1], V = A[2];
-  var p = I.length, m = 0, i, j, k, a, b, c;
+  let I = A[0], J = A[1], V = A[2];
+  let p = I.length, m = 0, i, j, k, a, b, c;
   for (i = 0; i < p; i++) {
     if (I[i] > m) m = I[i];
   }
   m++;
-  var L = Array(m), U = Array(m), left = rep([m], Infinity), right = rep([m], -Infinity);
-  var Ui, Uj, alpha;
+  let L = Array(m), U = Array(m), left = rep([m], Infinity), right = rep([m], -Infinity);
+  let Ui, Uj, alpha;
   for (k = 0; k < p; k++) {
     i = I[k];
     j = J[k];
@@ -2642,7 +2647,7 @@ export function cLU(A) {
   }
   for (i = 0; i < m - 1; i++) { if (right[i] > right[i + 1]) right[i + 1] = right[i]; }
   for (i = m - 1; i >= 1; i--) { if (left[i] < left[i - 1]) left[i - 1] = left[i]; }
-  var countL = 0, countU = 0;
+  let countL = 0, countU = 0;
   for (i = 0; i < m; i++) {
     U[i] = rep([right[i] - left[i] + 1], 0);
     L[i] = rep([i - left[i]], 0);
@@ -2667,8 +2672,10 @@ export function cLU(A) {
       }
     }
   }
-  var Ui = [], Uj = [], Uv = [], Li = [], Lj = [], Lv = [];
-  var p, q, foo;
+  Ui = [], Uj = [];
+
+  let Uv = [], Li = [], Lj = [], Lv = [];
+  let q, foo;
   p = 0;
   q = 0;
   for (i = 0; i < m; i++) {
@@ -2701,11 +2708,11 @@ export function cLU(A) {
 };
 
 export function cLUsolve(lu, b) {
-  var L = lu.L, U = lu.U, ret = allocclone(b);
-  var Li = L[0], Lj = L[1], Lv = L[2];
-  var Ui = U[0], Uj = U[1], Uv = U[2];
-  var p = Ui.length, q = Li.length;
-  var m = ret.length, i, j, k;
+  let L = lu.L, U = lu.U, ret = allocclone(b);
+  let Li = L[0], Lj = L[1], Lv = L[2];
+  let Ui = U[0], Uj = U[1], Uv = U[2];
+  let p = Ui.length, q = Li.length;
+  let m = ret.length, i, j, k;
   k = 0;
   for (i = 0; i < m; i++) {
     while (Lj[k] < i) {
@@ -2728,8 +2735,8 @@ export function cLUsolve(lu, b) {
 
 export function cgrid(n, shape) {
   if (typeof n === "number") n = [n, n];
-  var ret = rep(n, -1);
-  var i, j, count;
+  let ret = rep(n, -1);
+  let i, j, count;
   if (typeof shape !== "function") {
     switch (shape) {
       case 'L':
@@ -2757,9 +2764,9 @@ export function cgrid(n, shape) {
 }
 
 export function cdelsq(g) {
-  var dir = [[-1, 0], [0, -1], [0, 1], [1, 0]];
-  var s = dim(g), m = s[0], n = s[1], i, j, k, p, q;
-  var Li = [], Lj = [], Lv = [];
+  let dir = [[-1, 0], [0, -1], [0, 1], [1, 0]];
+  let s = dim(g), m = s[0], n = s[1], i, j, k, p, q;
+  let Li = [], Lj = [], Lv = [];
   for (i = 1; i < m - 1; i++) {
     for (j = 1; j < n - 1; j++) {
       if (g[i][j] < 0) continue;
@@ -2780,7 +2787,7 @@ export function cdelsq(g) {
 }
 
 export function cdotMV(A, x) {
-  var ret, Ai = A[0], Aj = A[1], Av = A[2], k, p = Ai.length, N;
+  let ret, Ai = A[0], Aj = A[1], Av = A[2], k, p = Ai.length, N;
   N = 0;
   for (k = 0; k < p; k++) { if (Ai[k] > N) N = Ai[k]; }
   N++;
@@ -2800,24 +2807,24 @@ export function Spline(x, yl, yr, kl, kr) {
 }
 
 Spline.prototype._at = function _at(x1, p) {
-  var x = this.x;
-  var yl = this.yl;
-  var yr = this.yr;
-  var kl = this.kl;
-  var kr = this.kr;
-  var x1, a, b, t;
-  var add = generated.add, sub = generated.sub, mul = generated.mul;
+  let x = this.x;
+  let yl = this.yl;
+  let yr = this.yr;
+  let kl = this.kl;
+  let kr = this.kr;
+  let a, b, t;
+  let add = generated.add, sub = generated.sub, mul = generated.mul;
   a = sub(mul(kl[p], x[p + 1] - x[p]), sub(yr[p + 1], yl[p]));
   b = add(mul(kr[p + 1], x[p] - x[p + 1]), sub(yr[p + 1], yl[p]));
   t = (x1 - x[p])/(x[p + 1] - x[p]);
-  var s = t*(1 - t);
+  let s = t*(1 - t);
   return add(add(add(mul(1 - t, yl[p]), mul(t, yr[p + 1])), mul(a, s*(1 - t))), mul(b, s*t));
 }
 Spline.prototype.at = function at(x0) {
   if (typeof x0 === "number") {
-    var x = this.x;
-    var n = x.length;
-    var p, q, mid, floor = Math.floor, a, b, t;
+    let x = this.x;
+    let n = x.length;
+    let p, q, mid, floor = Math.floor, a, b, t;
     p = 0;
     q = n - 1;
     while (q - p > 1) {
@@ -2827,22 +2834,22 @@ Spline.prototype.at = function at(x0) {
     }
     return this._at(x0, p);
   }
-  var n = x0.length, i, ret = Array(n);
+  let n = x0.length, i, ret = Array(n);
   for (i = n - 1; i !== -1; --i) {
     ret[i] = this.at(x0[i]);
   }
   return ret;
 }
 Spline.prototype.diff = function diff() {
-  var x = this.x;
-  var yl = this.yl;
-  var yr = this.yr;
-  var kl = this.kl;
-  var kr = this.kr;
-  var n = yl.length;
-  var i, dx, dy;
-  var zl = kl, zr = kr, pl = Array(n), pr = Array(n);
-  var add = generated.add, mul = generated.mul, div = generated.div, sub = generated.sub;
+  let x = this.x;
+  let yl = this.yl;
+  let yr = this.yr;
+  let kl = this.kl;
+  let kr = this.kr;
+  let n = yl.length;
+  let i, dx, dy;
+  let zl = kl, zr = kr, pl = Array(n), pr = Array(n);
+  let add = generated.add, mul = generated.mul, div = generated.div, sub = generated.sub;
   for (i = n - 1; i !== -1; --i) {
     dx = x[i + 1] - x[i];
     dy = sub(yr[i + 1], yl[i]);
@@ -2857,24 +2864,23 @@ Spline.prototype.roots = function roots() {
   }
 
   function heval(y0, y1, k0, k1, x) {
-    var A = k0*2 - (y1 - y0);
-    var B = -k1*2 + (y1 - y0);
-    var t = (x + 1)*0.5;
-    var s = t*(1 - t);
+    let A = k0*2 - (y1 - y0);
+    let B = -k1*2 + (y1 - y0);
+    let t = (x + 1)*0.5;
+    let s = t*(1 - t);
     return (1 - t)*y0 + t*y1 + A*s*(1 - t) + B*s*t;
   }
 
-  var ret = [];
-  var x = this.x, yl = this.yl, yr = this.yr, kl = this.kl, kr = this.kr;
+  let x = this.x, yl = this.yl, yr = this.yr, kl = this.kl, kr = this.kr;
   if (typeof yl[0] === "number") {
     yl = [yl];
     yr = [yr];
     kl = [kl];
     kr = [kr];
   }
-  var m = yl.length, n = x.length - 1, i, j, k, y, s, t;
-  var ai, bi, ci, di, ret = Array(m), ri, k0, k1, y0, y1, A, B, D, dx, cx, stops, z0, z1, zm, t0, t1, tm;
-  var sqrt = Math.sqrt;
+  let m = yl.length, n = x.length - 1, i, j, k, y, s, t;
+  let ai, bi, ci, di, ret = allocarray(m), ri, k0, k1, y0, y1, A, B, D, dx, cx, stops, z0, z1, zm, t0, t1, tm;
+  let sqrt = Math.sqrt;
   for (i = 0; i !== m; ++i) {
     ai = yl[i];
     bi = yr[i];
@@ -2920,7 +2926,7 @@ Spline.prototype.roots = function roots() {
           z0 = z1;
           continue;
         }
-        var side = 0;
+        let side = 0;
         while (1) {
           tm = (z0*t1 - z1*t0)/(z0 - z1);
           if (tm <= t0 || tm >= t1) { break; }
@@ -2950,9 +2956,9 @@ Spline.prototype.roots = function roots() {
 }
 
 export function spline(x, y, k1, kn) {
-  var n = x.length, b = [], dx = [], dy = [];
-  var i;
-  var sub = generated.sub, mul = generated.mul, add = generated.add;
+  let n = x.length, b = [], dx = [], dy = [];
+  let i;
+  let sub = generated.sub, mul = generated.mul, add = generated.add;
   for (i = n - 2; i >= 0; i--) {
     dx[i] = x[i + 1] - x[i];
     dy[i] = sub(y[i + 1], y[i]);
@@ -2961,7 +2967,7 @@ export function spline(x, y, k1, kn) {
     k1 = kn = "periodic";
   }
   // Build sparse tridiagonal system
-  var T = [[], [], []];
+  let T = [[], [], []];
   switch (typeof k1) {
     case "undefined":
       b[0] = mul(3/(dx[0]*dx[0]), dy[0]);
@@ -3007,7 +3013,7 @@ export function spline(x, y, k1, kn) {
   }
   if (typeof b[0] !== "number") b = transpose(b);
   else b = [b];
-  var k = Array(b.length);
+  let k = Array(b.length);
   if (typeof k1 === "string") {
     for (i = k.length - 1; i !== -1; --i) {
       k[i] = ccsLUPSolve(ccsLUP(ccsScatter(T)), b[i]);
@@ -3025,10 +3031,10 @@ export function spline(x, y, k1, kn) {
 
 // 8. FFT
 export function fftpow2(x, y) {
-  var n = x.length;
+  let n = x.length;
   if (n === 1) return;
-  var cos = Math.cos, sin = Math.sin, i, j;
-  var xe = Array(n/2), ye = Array(n/2), xo = Array(n/2), yo = Array(n/2);
+  let cos = Math.cos, sin = Math.sin, i, j;
+  let xe = Array(n/2), ye = Array(n/2), xo = Array(n/2), yo = Array(n/2);
   j = n/2;
   for (i = n - 1; i !== -1; --i) {
     --j;
@@ -3041,7 +3047,7 @@ export function fftpow2(x, y) {
   fftpow2(xe, ye);
   fftpow2(xo, yo);
   j = n/2;
-  var t, k = (-6.2831853071795864769252867665590057683943387987502116419/n), ci, si;
+  let t, k = (-6.2831853071795864769252867665590057683943387987502116419/n), ci, si;
   for (i = n - 1; i !== -1; --i) {
     --j;
     if (j === -1) j = n/2 - 1;
@@ -3054,10 +3060,10 @@ export function fftpow2(x, y) {
 }
 
 export function _ifftpow2(x, y) {
-  var n = x.length;
+  let n = x.length;
   if (n === 1) return;
-  var cos = Math.cos, sin = Math.sin, i, j;
-  var xe = Array(n/2), ye = Array(n/2), xo = Array(n/2), yo = Array(n/2);
+  let cos = Math.cos, sin = Math.sin, i, j;
+  let xe = Array(n/2), ye = Array(n/2), xo = Array(n/2), yo = Array(n/2);
   j = n/2;
   for (i = n - 1; i !== -1; --i) {
     --j;
@@ -3070,7 +3076,7 @@ export function _ifftpow2(x, y) {
   _ifftpow2(xe, ye);
   _ifftpow2(xo, yo);
   j = n/2;
-  var t, k = (6.2831853071795864769252867665590057683943387987502116419/n), ci, si;
+  let t, k = (6.2831853071795864769252867665590057683943387987502116419/n), ci, si;
   for (i = n - 1; i !== -1; --i) {
     --j;
     if (j === -1) j = n/2 - 1;
@@ -3091,7 +3097,7 @@ export function ifftpow2(x, y) {
 export function convpow2(ax, ay, bx, by) {
   fftpow2(ax, ay);
   fftpow2(bx, by);
-  var i, n = ax.length, axi, bxi, ayi, byi;
+  let i, n = ax.length, axi, bxi, ayi, byi;
   for (i = n - 1; i !== -1; --i) {
     axi = ax[i];
     ayi = ay[i];
@@ -3104,12 +3110,12 @@ export function convpow2(ax, ay, bx, by) {
 }
 
 T.prototype.fft = function fft() {
-  var x = this.x, y = this.y;
-  var n                                   = x.length, log                   = Math.log, log2 = log(2),
+  let x = this.x, y = this.y;
+  let n                                   = x.length, log                   = Math.log, log2 = log(2),
       p = Math.ceil(log(2*n - 1)/log2), m = Math.pow(2, p);
-  var cx = rep([m], 0), cy = rep([m], 0), cos = Math.cos, sin = Math.sin;
-  var k, c = (-3.141592653589793238462643383279502884197169399375105820/n), t;
-  var a = rep([m], 0), b = rep([m], 0), nhalf = Math.floor(n/2);
+  let cx = rep([m], 0), cy = rep([m], 0), cos = Math.cos, sin = Math.sin;
+  let k, c = (-3.141592653589793238462643383279502884197169399375105820/n), t;
+  let a = rep([m], 0), b = rep([m], 0), nhalf = Math.floor(n/2);
   for (k = 0; k < n; k++) {
     a[k] = x[k];
   }
@@ -3124,7 +3130,7 @@ T.prototype.fft = function fft() {
     cx[m - k] = cos(t);
     cy[m - k] = sin(t)
   }
-  var X = new T(a, b), Y = new T(cx, cy);
+  let X = new T(a, b), Y = new T(cx, cy);
   X = X.mul(Y);
   convpow2(X.x, X.y, allocclone(Y.x), generated.neg(Y.y));
   X = X.mul(Y);
@@ -3133,12 +3139,12 @@ T.prototype.fft = function fft() {
   return X;
 }
 T.prototype.ifft = function ifft() {
-  var x = this.x, y = this.y;
-  var n                                   = x.length, log                   = Math.log, log2 = log(2),
+  let x = this.x, y = this.y;
+  let n                                   = x.length, log = Math.log, log2 = log(2),
       p = Math.ceil(log(2*n - 1)/log2), m = Math.pow(2, p);
-  var cx = rep([m], 0), cy = rep([m], 0), cos = Math.cos, sin = Math.sin;
-  var k, c = (3.141592653589793238462643383279502884197169399375105820/n), t;
-  var a = rep([m], 0), b = rep([m], 0), nhalf = Math.floor(n/2);
+  let cx = rep([m], 0), cy = rep([m], 0), cos = Math.cos, sin = Math.sin;
+  let k, c = (3.141592653589793238462643383279502884197169399375105820/n), t;
+  let a = rep([m], 0), b = rep([m], 0), nhalf = Math.floor(n/2);
   for (k = 0; k < n; k++) {
     a[k] = x[k];
   }
@@ -3153,7 +3159,7 @@ T.prototype.ifft = function ifft() {
     cx[m - k] = cos(t);
     cy[m - k] = sin(t)
   }
-  var X = new T(a, b), Y = new T(cx, cy);
+  let X = new T(a, b), Y = new T(cx, cy);
   X = X.mul(Y);
   convpow2(X.x, X.y, allocclone(Y.x), generated.neg(Y.y));
   X = X.mul(Y);
@@ -3164,16 +3170,17 @@ T.prototype.ifft = function ifft() {
 
 //9. Unconstrained optimization
 export function gradient(f, x) {
-  var n = x.length;
-  var f0 = f(x);
+  let n = x.length;
+  let f0 = f(x);
   if (isNaN(f0)) throw new Error('gradient: f(x) is a NaN!');
-  var max = Math.max;
-  var i, x0 = allocclone(x), f1, f2, J = Array(n);
-  var div = generated.div, sub = generated.sub, errest, roundoff, max = Math.max, eps = 1e-3, abs = Math.abs,
-      min                                                                                         = Math.min;
-  var t0, t1, t2, it = 0, d1, d2, N;
+
+  let i, x0 = allocclone(x), f1, f2, J = Array(n);
+  let div = generated.div, sub = generated.sub, errest, roundoff, max = Math.max, eps = 1e-3;
+  let abs = Math.abs, min = Math.min;
+
+  let t0, t1, t2, it = 0, d1, d2, N;
   for (i = 0; i < n; i++) {
-    var h = max(1e-6*f0, 1e-8);
+    let h = max(1e-6*f0, 1e-8);
     while (1) {
       ++it;
       if (it > 20) { throw new Error("Numerical gradient fails"); }
@@ -3200,29 +3207,34 @@ export function gradient(f, x) {
   return J;
 }
 
-export function uncmin(f, x0, tol, gradient, maxit, callback, options) {
-  var grad = gradient;
-  if (typeof options === "undefined") { options = {}; }
-  if (typeof tol === "undefined") { tol = 1e-8; }
+export function uncmin(f, x0, tol = 1e-8, gradient, maxit = 1000, callback, options = {}) {
+  let grad = gradient;
+
   if (typeof gradient === "undefined") {
     gradient = function (x) {
       return grad(f, x);
     };
   }
-  if (typeof maxit === "undefined") maxit = 1000;
+
   x0 = allocclone(x0);
-  var n = x0.length;
-  var f0 = f(x0), f1, df0;
+
+  let n = x0.length;
+  let f0 = f(x0), f1, df0;
+
   if (isNaN(f0)) throw new Error('uncmin: f(x0) is a NaN!');
-  var max = Math.max, norm2 = norm2;
+
+  let max = Math.max, norm2 = norm2;
   tol = max(tol, epsilon);
-  var step, g0, g1, H1 = options.Hinv || allocidentity(n);
-  var dot = dot, inv = inv, sub = generated.sub, add = generated.add, ten = tensor,
+
+  let step, g0, g1, H1 = options.Hinv || allocidentity(n);
+  let dot = dot, inv = inv, sub = generated.sub, add = generated.add, ten = tensor,
       div                                                                 = generated.div, mul                                            = generated.mul;
-  var all = generated.all, isfinite = generated.isFinite, neg = generated.neg;
-  var it = 0, i, s, x1, y, Hy, Hs, ys, i0, t, nstep, t1, t2;
-  var msg = "";
+  let all = generated.all, isfinite = generated.isFinite, neg = generated.neg;
+  let it = 0, i, s, x1, y, Hy, Hs, ys, i0, t, nstep, t1, t2;
+  let msg = "";
+
   g0 = gradient(x0);
+
   while (it < maxit) {
     if (typeof callback === "function") {
       if (callback(it, x0, f0, g0, H1)) {
@@ -3301,16 +3313,16 @@ Dopri.prototype._at = function _at(xi, j) {
     return x*x;
   }
 
-  var sol = this;
-  var xs = sol.x;
-  var ys = sol.y;
-  var k1 = sol.f;
-  var ymid = sol.ymid;
-  var n = xs.length;
-  var x0, x1, xh, y0, y1, yh, xi;
-  var floor = Math.floor, h;
-  var c = 0.5;
-  var add = generated.add, mul = generated.mul, sub = generated.sub, p, q, w;
+  let sol = this;
+  let xs = sol.x;
+  let ys = sol.y;
+  let k1 = sol.f;
+  let ymid = sol.ymid;
+  let n = xs.length;
+  let x0, x1, xh, y0, y1, yh;
+  let floor = Math.floor, h;
+  let c = 0.5;
+  let add = generated.add, mul = generated.mul, sub = generated.sub, p, q, w;
   x0 = xs[j];
   x1 = xs[j + 1];
   y0 = ys[j];
@@ -3332,15 +3344,15 @@ Dopri.prototype._at = function _at(xi, j) {
     mul(q, w[4]));
 }
 Dopri.prototype.at = function at(x) {
-  var i, j, k, floor = Math.floor;
+  let i, j, k, floor = Math.floor;
   if (typeof x !== "number") {
-    var n = x.length, ret = Array(n);
+    let n = x.length, ret = Array(n);
     for (i = n - 1; i !== -1; --i) {
       ret[i] = this.at(x[i]);
     }
     return ret;
   }
-  var x0 = this.x;
+  let x0 = this.x;
   i = 0;
   j = x0.length - 1;
   while (j - i > 1) {
@@ -3354,30 +3366,30 @@ Dopri.prototype.at = function at(x) {
 export function dopri(x0, x1, y0, f, tol, maxit, event) {
   if (typeof tol === "undefined") { tol = 1e-6; }
   if (typeof maxit === "undefined") { maxit = 1000; }
-  var xs = [x0], ys = [y0], k1 = [f(x0, y0)], k2, k3, k4, k5, k6, k7, ymid = [];
-  var A2 = 1/5;
-  var A3 = [3/40, 9/40];
-  var A4 = [44/45, -56/15, 32/9];
-  var A5 = [19372/6561, -25360/2187, 64448/6561, -212/729];
-  var A6 = [9017/3168, -355/33, 46732/5247, 49/176, -5103/18656];
-  var b = [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84];
-  var bm = [0.5*6025192743/30085553152,
+  let xs = [x0], ys = [y0], k1 = [f(x0, y0)], k2, k3, k4, k5, k6, k7, ymid = [];
+  let A2 = 1/5;
+  let A3 = [3/40, 9/40];
+  let A4 = [44/45, -56/15, 32/9];
+  let A5 = [19372/6561, -25360/2187, 64448/6561, -212/729];
+  let A6 = [9017/3168, -355/33, 46732/5247, 49/176, -5103/18656];
+  let b = [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84];
+  let bm = [0.5*6025192743/30085553152,
             0,
             0.5*51252292925/65400821598,
             0.5* -2691868925/45128329728,
             0.5*187940372067/1594534317056,
             0.5* -1776094331/19743644256,
             0.5*11237099/235043384];
-  var c = [1/5, 3/10, 4/5, 8/9, 1, 1];
-  var e = [-71/57600, 0, 71/16695, -71/1920, 17253/339200, -22/525, 1/40];
-  var i = 0, er, j;
-  var h = (x1 - x0)/10;
-  var it = 0;
-  var add = generated.add, mul = generated.mul, y1, erinf;
-  var max = Math.max, min = Math.min, abs = Math.abs, norminf = generated.norminf, pow = Math.pow;
-  var any = generated.any, lt = generated.lt, and = generated.and, sub = generated.sub;
-  var e0, e1, ev;
-  var ret = new Dopri(xs, ys, k1, ymid, -1, "");
+  let c = [1/5, 3/10, 4/5, 8/9, 1, 1];
+  let e = [-71/57600, 0, 71/16695, -71/1920, 17253/339200, -22/525, 1/40];
+  let i = 0, er, j;
+  let h = (x1 - x0)/10;
+  let it = 0;
+  let add = generated.add, mul = generated.mul, y1, erinf;
+  let max = Math.max, min = Math.min, abs = Math.abs, norminf = generated.norminf, pow = Math.pow;
+  let any = generated.any, lt = generated.lt, and = generated.and, sub = generated.sub;
+  let e0, e1, ev;
+  let ret = new Dopri(xs, ys, k1, ymid, -1, "");
   if (typeof event === "function") e0 = event(x0, y0);
   while (x0 < x1 && it < maxit) {
     ++it;
@@ -3412,7 +3424,7 @@ export function dopri(x0, x1, y0, f, tol, maxit, event) {
     ys[i] = y1;
     k1[i] = k7;
     if (typeof event === "function") {
-      var yi, xl = x0, xr = x0 + 0.5*h, xi;
+      let yi, xl = x0, xr = x0 + 0.5*h, xi;
       e1 = event(xr, ymid[i - 1]);
       ev = and(lt(e0, 0), lt(0, e1));
       if (!any(ev)) {
@@ -3423,8 +3435,8 @@ export function dopri(x0, x1, y0, f, tol, maxit, event) {
         ev = and(lt(e0, 0), lt(0, e1));
       }
       if (any(ev)) {
-        var xc, yc, en, ei;
-        var side = 0, sl = 1.0, sr = 1.0;
+        let xc, yc, en, ei;
+        let side = 0, sl = 1.0, sr = 1.0;
         while (1) {
           if (typeof e0 === "number") xi = (sr*e1*xl - sl*e0*xr)/(sr*e1 - sl*e0);
           else {
@@ -3477,11 +3489,11 @@ export function dopri(x0, x1, y0, f, tol, maxit, event) {
 export function LU(A, fast) {
   fast = fast || false;
 
-  var abs = Math.abs;
-  var i, j, k, absAjk, Akk, Ak, Pk, Ai;
-  var max;
-  var n = A.length, n1 = n - 1;
-  var P = new Array(n);
+  let abs = Math.abs;
+  let i, j, k, absAjk, Akk, Ak, Pk, Ai;
+  let max;
+  let n = A.length, n1 = n - 1;
+  let P = new Array(n);
   if (!fast) A = allocclone(A);
 
   for (k = 0; k < n; ++k) {
@@ -3527,12 +3539,12 @@ export function LU(A, fast) {
 }
 
 export function LUsolve(LUP, b) {
-  var i, j;
-  var LU = LUP.LU;
-  var n = LU.length;
-  var x = allocclone(b);
-  var P = LUP.P;
-  var Pi, LUi, LUii, tmp;
+  let i, j;
+  let LU = LUP.LU;
+  let n = LU.length;
+  let x = allocclone(b);
+  let P = LUP.P;
+  let Pi, LUi, LUii, tmp;
 
   for (i = n - 1; i !== -1; --i) {
     x[i] = b[i];
@@ -3569,12 +3581,12 @@ export function solve(A, b, fast) {
 
 // 12. Linear programming
 export function echelonize(A) {
-  var s = dim(A), m = s[0], n = s[1];
-  var I = allocidentity(m);
-  var P = Array(m);
-  var i, j, k, l, Ai, Ii, Z, a;
-  var abs = Math.abs;
-  var diveq = generated.diveq;
+  let s = dim(A), m = s[0], n = s[1];
+  let I = allocidentity(m);
+  let P = Array(m);
+  let i, j, k, l, Ai, Ii, Z, a;
+  let abs = Math.abs;
+  let diveq = generated.diveq;
   A = allocclone(A);
   for (i = 0; i < m; ++i) {
     k = 0;
@@ -3604,32 +3616,32 @@ export function echelonize(A) {
 }
 
 export function __solveLP(c, A, b, tol, maxit, x, flag) {
-  var sum = generated.sum, log = generated.log, mul = generated.mul, sub = generated.sub, dot = generated.dot;
-  var div = generated.div, add = generated.add;
+  let sum = generated.sum, log = generated.log, mul = generated.mul, sub = generated.sub, dot = generated.dot;
+  let div = generated.div, add = generated.add;
 
-  var m = c.length, n = b.length, y;
-  var unbounded = false, cb, i0 = 0;
-  var alpha = 1.0;
-  var f0, df0, AT = transpose(A), transpose = transpose, leq = generated.leq;
-  var sqrt = Math.sqrt, abs = Math.abs;
-  var muleq = generated.muleq;
-  var norm = generated.norminf, any = generated.any, min = Math.min;
-  var all = generated.all, gt = generated.gt;
-  var p = Array(m), A0 = Array(n), e = rep([n], 1), H;
-  var solve = solve, z = sub(b, dot(A, x)), count;
-  var dotcc = dot(c, c);
-  var g;
+  let m = c.length, n = b.length, y;
+  let unbounded = false, cb, i0 = 0;
+  let alpha = 1.0;
+  let f0, df0, AT = transpose(A), transpose = transpose, leq = generated.leq;
+  let sqrt = Math.sqrt, abs = Math.abs;
+  let muleq = generated.muleq;
+  let norm = generated.norminf, any = generated.any, min = Math.min;
+  let all = generated.all, gt = generated.gt;
+  let p = Array(m), A0 = Array(n), e = rep([n], 1), H;
+  let solve = solve, z = sub(b, dot(A, x)), count;
+  let dotcc = dot(c, c);
+  let g;
   for (count = i0; count < maxit; ++count) {
-    var i, j, d;
+    let i, j, d;
     for (i = n - 1; i !== -1; --i) {
       A0[i] = div(A[i], z[i]);
     }
-    var A1 = transpose(A0);
+    let A1 = transpose(A0);
     for (i = m - 1; i !== -1; --i) {
       p[i] = (/*x[i]+*/sum(A1[i]));
     }
     alpha = 0.25*abs(dotcc/dot(c, p));
-    var a1 = 100*sqrt(dotcc/dot(p, p));
+    let a1 = 100*sqrt(dotcc/dot(p, p));
     if (!isFinite(alpha) || alpha > a1) alpha = a1;
     g = add(c, mul(alpha, p));
     H = dot(A1, A0);
@@ -3637,8 +3649,8 @@ export function __solveLP(c, A, b, tol, maxit, x, flag) {
       H[i][i] += 1;
     }
     d = solve(H, div(g, alpha), true);
-    var t0 = div(z, dot(A, d));
-    var t = 1.0;
+    let t0 = div(z, dot(A, d));
+    let t = 1.0;
     for (i = n - 1; i !== -1; --i) {
       if (t0[i] < 0) t = min(t, -0.999*t0[i]);
     }
@@ -3648,7 +3660,7 @@ export function __solveLP(c, A, b, tol, maxit, x, flag) {
     x = y;
     if (alpha < tol) return {solution: y, message: "", iterations: count};
     if (flag) {
-      var s = dot(c, g), Ag = dot(A, g);
+      let s = dot(c, g), Ag = dot(A, g);
       unbounded = true;
       for (i = n - 1; i !== -1; --i) {
         if (s*Ag[i] < 0) {
@@ -3666,59 +3678,69 @@ export function __solveLP(c, A, b, tol, maxit, x, flag) {
 }
 
 export function _solveLP(c, A, b, tol, maxit) {
-  var m = c.length, n = b.length, y;
-  var sum = generated.sum, log = generated.log, mul = generated.mul, sub = generated.sub;
-  var dot = generated.dot, div = generated.div, add = generated.add;
+  let m = c.length, n = b.length;
+  let sum = generated.sum, log = generated.log, mul = generated.mul, sub = generated.sub;
+  let dot = generated.dot, div = generated.div, add = generated.add;
 
-  var c0 = rep([m], 0).concat([1]);
-  var J = rep([n, 1], -1);
-  var A0 = blockMatrix([[A, J]]);
-  var b0 = b;
-  var y = rep([m], 0).concat(Math.max(0, generated.sup(generated.neg(b))) + 1);
-  var x0 = __solveLP(c0, A0, b0, tol, maxit, y, false);
-  var x = allocclone(x0.solution);
+  let c0 = rep([m], 0).concat([1]);
+  let J = rep([n, 1], -1);
+
+  let A0 = blockMatrix([[A, J]]);
+  let b0 = b;
+
+  let y = rep([m], 0).concat(Math.max(0, generated.sup(generated.neg(b))) + 1);
+
+  let x0 = __solveLP(c0, A0, b0, tol, maxit, y, false);
+
+  let x = allocclone(x0.solution);
   x.length = m;
-  var foo = generated.inf(sub(b, dot(A, x)));
-  if (foo < 0) { return {solution: NaN, message: "Infeasible", iterations: x0.iterations}; }
-  var ret = __solveLP(c, A, b, tol, maxit - x0.iterations, x, true);
-  ret.iterations += x0.iterations;
-  return ret;
-};
 
-export function solveLP(c, A, b, Aeq, beq, tol, maxit) {
-  if (typeof maxit === "undefined") maxit = 1000;
-  if (typeof tol === "undefined") tol = epsilon;
+  let foo = generated.inf(sub(b, dot(A, x)));
+
+  if (foo < 0) {
+    return {solution: NaN, message: "Infeasible", iterations: x0.iterations};
+  }
+
+  let ret = __solveLP(c, A, b, tol, maxit - x0.iterations, x, true);
+  ret.iterations += x0.iterations;
+
+  return ret;
+}
+
+export function solveLP(c, A, b, Aeq, beq, tol=epsilon, maxit=1000) {
   if (typeof Aeq === "undefined") return _solveLP(c, A, b, tol, maxit);
-  var m = Aeq.length, n = Aeq[0].length, o = A.length;
-  var B = echelonize(Aeq);
-  var flags = rep([n], 0);
-  var P = B.P;
-  var Q = [];
-  var i;
+
+  let m = Aeq.length, n = Aeq[0].length, o = A.length;
+  let B = echelonize(Aeq);
+  let flags = rep([n], 0);
+  let P = B.P;
+  let Q = [];
+  let i;
+
   for (i = P.length - 1; i !== -1; --i) {
     flags[P[i]] = 1;
   }
   for (i = n - 1; i !== -1; --i) {
     if (flags[i] === 0) Q.push(i);
   }
-  var g = getRange;
-  var I = linspace(0, m - 1), J = linspace(0, o - 1);
-  var Aeq2 = g(Aeq, I, Q), A1 = g(A, J, P), A2 = g(A, J, Q), sub = generated.sub;
-  var A3 = dot(A1, B.I);
-  var A4 = sub(A2, dot(A3, Aeq2)), b4 = sub(b, dot(A3, beq));
-  var c1 = Array(P.length), c2 = Array(Q.length);
+  let g = getRange;
+  let I = linspace(0, m - 1), J = linspace(0, o - 1);
+  let Aeq2 = g(Aeq, I, Q), A1 = g(A, J, P), A2 = g(A, J, Q), sub = generated.sub;
+  let A3 = dot(A1, B.I);
+  let A4 = sub(A2, dot(A3, Aeq2)), b4 = sub(b, dot(A3, beq));
+  let c1 = Array(P.length), c2 = Array(Q.length);
   for (i = P.length - 1; i !== -1; --i) {
     c1[i] = c[P[i]];
   }
   for (i = Q.length - 1; i !== -1; --i) {
     c2[i] = c[Q[i]];
   }
-  var c4 = sub(c2, dot(c1, dot(B.I, Aeq2)));
-  var S = _solveLP(c4, A4, b4, tol, maxit);
-  var x2 = S.solution;
+  let c4 = sub(c2, dot(c1, dot(B.I, Aeq2)));
+  let S = _solveLP(c4, A4, b4, tol, maxit);
+  let x2 = S.solution;
   if (x2 !== x2) return S;
-  var x1 = dot(B.I, sub(beq, dot(Aeq2, x2)));
-  var x = Array(c.length);
+  let x1 = dot(B.I, sub(beq, dot(Aeq2, x2)));
+  let x = Array(c.length);
   for (i = P.length - 1; i !== -1; --i) {
     x[P[i]] = x1[i];
   }
@@ -3730,12 +3752,12 @@ export function solveLP(c, A, b, Aeq, beq, tol, maxit) {
 
 export function MPStoLP(MPS) {
   if (MPS instanceof String) { MPS.split('\n'); }
-  var state = 0;
-  var states = ['Initial state', 'NAME', 'ROWS', 'COLUMNS', 'RHS', 'BOUNDS', 'ENDATA'];
-  var n = MPS.length;
-  var i, j, z, N = 0, rows = {}, sign = [], rl = 0, vars = {}, nv = 0;
-  var name;
-  var c = [], A = [], b = [];
+  let state = 0;
+  let states = ['Initial state', 'NAME', 'ROWS', 'COLUMNS', 'RHS', 'BOUNDS', 'ENDATA'];
+  let n = MPS.length;
+  let i, j, z, N = 0, rows = {}, sign = [], rl = 0, vars = {}, nv = 0;
+  let name;
+  let c = [], A = [], b = [];
 
   function err(e) {
     throw new Error('MPStoLP: ' + e + '\nLine ' + i + ': ' + MPS[i] + '\nCurrent state: ' + states[state] + '\n');
@@ -3743,8 +3765,8 @@ export function MPStoLP(MPS) {
 
   for (i = 0; i < n; ++i) {
     z = MPS[i];
-    var w0 = z.match(/\S*/g);
-    var w = [];
+    let w0 = z.match(/\S*/g);
+    let w = [];
     for (j = 0; j < w0.length; ++j) {
       if (w0[j] !== "") w.push(w0[j]);
     }
@@ -3796,13 +3818,13 @@ export function MPStoLP(MPS) {
           A[nv] = rep([rl], 0);
           ++nv;
         }
-        var p = vars[w[0]];
+        let p = vars[w[0]];
         for (j = 1; j < w.length; j += 2) {
           if (w[j] === N) {
             c[p] = parseFloat(w[j + 1]);
             continue;
           }
-          var q = rows[w[j]];
+          let q = rows[w[j]];
           A[p][q] = (sign[q] < 0 ? -1 : 1)*parseFloat(w[j + 1]);
         }
         break;
