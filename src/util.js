@@ -8,7 +8,7 @@ export var scope;
 
 let arraypools = new Map();
 let matpools = new Map();
-let _startdepth = 0;
+export var _startdepth = 0;
 
 export const pools = [arraypools, matpools];
 
@@ -93,6 +93,7 @@ export class cachepool extends Array {
 
     for (let i = 0; i < initialCount; i++) {
       let item = this._alloc();
+
       item[freetag] = true;
       this.freelist.push(item);
     }
@@ -112,16 +113,19 @@ export class cachepool extends Array {
   }
 
   alloc() {
+    let item;
+
     if (this.freelist.length > 0) {
-      let item = this.freelist.pop();
-
-      item[freetag] = false;
-      scope.addBlock(item);
-
-      return item;
+      item = this.freelist.pop();
+    } else {
+      item = this._alloc();
     }
 
-    return this._alloc();
+    item[pooltag] = this;
+    item[freetag] = false;
+    scope.addBlock(item);
+
+    return item;
   }
 
   free(item) {
@@ -338,13 +342,17 @@ scope = new Scope();
 
 let scopealloc = new cachepool(() => new Scope(), 8);
 
+export function _freeAll() {
+  for (let poolmap of pools) {
+    for (let pool of poolmap.values()) {
+      pool.freeAll();
+    }
+  }
+}
+
 export function start() {
   if (_startdepth === 0) {
-    for (let poolmap of pools) {
-      for (let pool of poolmap.values()) {
-        pool.freeAll();
-      }
-    }
+    _freeAll();
   }
 
   let scope2 = scopealloc.alloc().reset();
@@ -353,6 +361,31 @@ export function start() {
   scope = scope2;
 
   _startdepth++;
+}
+
+export function reportMemory() {
+  let blocks = [];
+
+  for (let poolset of pools) {
+    for (let pool of poolset.values()) {
+      for (let block of pool) {
+        if (!block[freetag]) {
+          blocks.push(block);
+        }
+      }
+    }
+  }
+
+  let tot = 0;
+  for (let block of blocks) {
+    tot += block.length*16;
+
+    console.log(block.constructor.name);
+  }
+
+  tot /= 1024;
+  tot = tot.toFixed(2);
+  console.log("estimated leaked memory:", tot + "kb");
 }
 
 export function scopePull(block) {
@@ -389,7 +422,9 @@ export function end() {
   _startdepth--;
 
   if (_startdepth < 0) {
-    console.error("Mismatched numeric.end()");
+    //console.error("Mismatched numeric.end()");
+    throw new Error("Mismatched numeric.end()");
+
     _startdepth = 0;
     return;
   }

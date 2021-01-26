@@ -137,6 +137,10 @@ export function prettyPrint(x) {
   return ret.join('');
 }
 
+export function print() {
+  return prettyPrint(...arguments);
+}
+
 export function parseDate(d) {
   function foo(d) {
     if (typeof d === 'string') { return Date.parse(d.replace(/-/g, '/')); }
@@ -588,25 +592,55 @@ generated.dotVM = dotVM;
 generated.dotMMbig = dotMMbig;
 generated.dotMMsmall = dotMMsmall;
 
-export function diag(d) {
-  let i, i1, j, n = d.length, A = Array(n), Ai;
-  for (i = n - 1; i >= 0; i--) {
-    Ai = Array(n);
-    i1 = i + 2;
-    for (j = n - 1; j >= i1; j -= 2) {
-      Ai[j] = 0;
-      Ai[j - 1] = 0;
+export function matrix(m, n=m) {
+  let mat = new Array(m);
+
+  for (let i=0; i<m; i++) {
+    let row = mat[i] = new Array(n);
+
+    for (let j=0; j<n; j++) {
+      row[j] = 0.0;
     }
-    if (j > i) { Ai[j] = 0; }
-    Ai[i] = d[i];
-    for (j = i - 1; j >= 1; j -= 2) {
-      Ai[j] = 0;
-      Ai[j - 1] = 0;
-    }
-    if (j === 0) { Ai[0] = 0; }
-    A[i] = Ai;
   }
-  return A;
+
+  return mat;
+}
+
+export function zero(d) {
+  if (typeof d[0] === "object") {
+    for (let i=0; i<d.length; i++) {
+      let row = d[i];
+
+      for (let j=0; j<row.length; j++) {
+        row[j] = 0.0;
+      }
+    }
+  } else {
+    for (let i = 0; i < d.length; i++) {
+      d[i] = 0;
+    }
+  }
+
+  return d;
+}
+
+export function setDiag(d, mat) {
+  let n = d.length;
+
+  for (let i=0; i<n; i++) {
+    mat[i][i] = d[i];
+  }
+
+  return mat;
+}
+
+
+export function diag(d) {
+  return setDiag(d, zero(matrix(d.length)));
+}
+
+export function allocdiag(d) {
+  return setDiag(d, zero(allocmat(d.length)));
 }
 
 generated.diag = diag;
@@ -663,7 +697,9 @@ export function pointwise(params, body, setup) {
     '}\n' +
     'return ret;'
   );
-  return Function.apply(null, fun);
+
+  return MakeFunction.apply(null, fun);
+  //return Function.apply(null, fun);
 }
 
 export function pointwise2(params, body, setup) {
@@ -801,6 +837,28 @@ export const mapreducers = {
   inf         : ['accum = min(accum,xi);', 'let accum = Infinity, min = Math.min;']
 };
 
+function MakeFunction() {
+  let code = arguments[arguments.length-1];
+  var $func;
+  let s = `$func = function(`;
+
+  for (let i=0; i<arguments.length-1; i++) {
+    if (i > 0) {
+      s += ", ";
+    }
+
+    s += arguments[i];
+  }
+
+  s += ') {\n';
+  s += code;
+  s += '}\n';
+
+  eval(s);
+
+  return $func;
+}
+
 (function () {
   let i, o;
   for (i = 0; i < mathfuns2.length; ++i) {
@@ -876,8 +934,9 @@ export const mapreducers = {
       if (myIndexOf.call(mathfuns, i) !== -1) {
         if (Math.hasOwnProperty(o)) setup = 'let ' + o + ' = Math.' + o + ';\n';
       }
+
       generated[i + 'eqV'] = pointwise2(['ret[i]'], 'ret[i] = ' + o + '(ret[i]);', setup);
-      generated[i + 'eq'] = Function('x',
+      generated[i + 'eq'] = MakeFunction('x',
         'if(typeof x !== "object") return ' + o + 'x\n' +
         'let i;\n' +
         'let V = generated.' + i + 'eqV;\n' +
@@ -885,7 +944,7 @@ export const mapreducers = {
         '_foreach(x,s,0,V);\n' +
         'return x;\n');
       generated[i + 'V'] = pointwise2(['x[i]'], 'ret[i] = ' + o + '(x[i]);', setup);
-      generated[i] = Function('x',
+      generated[i] = MakeFunction('x',
         'if(typeof x !== "object") return ' + o + '(x)\n' +
         'let i;\n' +
         'let V = generated.' + i + 'V;\n' +
@@ -1020,7 +1079,61 @@ export function det(x) {
   return ret*A[j][j];
 }
 
+function setTranspose_square(x) {
+  let n = x.length;
+
+  for (let i=0; i<n; i++) {
+    for (let j=0; j<i; j++) {
+      let t = x[i][j];
+
+      x[i][j] = x[j][i];
+      x[j][i] = t;
+    }
+  }
+
+  return x;
+}
+
+function setTranspose_nonsquare(x, alloc=false) {
+  let X = allocclone(x);
+
+  let m = x.length, n = x[0].length;
+
+  x.length = n;
+
+  for (let i=0; i<n; i++) {
+    let row = x[i];
+    if (!row) {
+      if (alloc) {
+        row = x[i] = allocarray(m);
+      } else {
+        row = x[i] = new Array(m);
+      }
+    } else {
+      row.length = m;
+    }
+
+    for (let j=0; j<m; j++) {
+      row[j] = X[j][i];
+    }
+  }
+
+  return x;
+}
+
+export function setTranspose(x, alloc=false) {
+  if (x.length === x[0].length) {
+    return setTranspose_square(x);
+  } else {
+    return setTranspose_nonsquare(x, alloc);
+  }
+}
+
 export function transpose(x) {
+  return setTranspose(allocclone(x, true));
+}
+
+export function old_transpose(x) {
   let i, j, m = x.length, n = x[0].length, ret = Array(n), A0, A1, Bj;
   for (j = 0; j < n; j++) {
     ret[j] = Array(m);
@@ -2048,19 +2161,82 @@ export function eig(A, maxiter) {
   return ret;
 };
 
+/**
+ columns
+
+ */
+export class CcsSparse extends Array {
+  constructor(Ai, Aj, Av) {
+    super();
+
+    this.starts = Ai; //maps columns to rows
+    this.columns = Aj; //maps entries in values to rows
+    this.values = Av; //the nonzero matrix data
+
+    this.push(Ai);
+    this.push(Aj);
+    this.push(Av);
+  }
+
+  loadDense(A) {
+    let m = A.length, foo, i, j, counts = [];
+
+    for (i = m - 1; i !== -1; --i) {
+      foo = A[i];
+
+      for (j in foo) {
+        j = parseInt(j);
+
+        while (j >= counts.length) {
+          counts[counts.length] = 0;
+        }
+        if (foo[j] !== 0) counts[j]++;
+      }
+    }
+
+    let n = counts.length;
+    let Ai = allocarray(n + 1);
+    Ai[0] = 0;
+    for (i = 0; i < n; ++i) {
+      Ai[i + 1] = Ai[i] + counts[i];
+    }
+    let Aj = allocarray(Ai[n]), Av = allocarray(Ai[n]);
+    for (i = m - 1; i !== -1; --i) {
+      foo = A[i];
+      for (j in foo) {
+        if (foo[j] !== 0) {
+          counts[j]--;
+          Aj[Ai[j] + counts[j]] = i;
+          Av[Ai[j] + counts[j]] = foo[j];
+        }
+      }
+    }
+
+    this[0] = this.starts = Ai;
+    this[1] = this.columns = Aj;
+    this[2] = this.values = Av;
+
+    return this;
+  }
+}
+
 // 5. Compressed Column Storage matrices
 export function ccsSparse(A) {
   let m = A.length, foo, i, j, counts = [];
+
   for (i = m - 1; i !== -1; --i) {
     foo = A[i];
+
     for (j in foo) {
       j = parseInt(j);
+
       while (j >= counts.length) {
         counts[counts.length] = 0;
       }
       if (foo[j] !== 0) counts[j]++;
     }
   }
+
   let n = counts.length;
   let Ai = Array(n + 1);
   Ai[0] = 0;
